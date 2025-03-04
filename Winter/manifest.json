@@ -1,0 +1,30 @@
+{
+  "name": "Winter",
+  "description": "Load xsxl data",
+  "version": "1.0",
+  "manifest_version": 3,
+  "icons":
+  {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+
+  "action": {
+          "default_icon": {
+           "16": "icon.png",
+              "24": "icon.png",
+              "32": "icon.png"
+            },
+            "default_title": "Start!",
+        "default_popup": "popup.html"
+  },
+  "content_scripts": 
+  [
+    {
+      "matches": ["https://*.semrush.fun/*"],
+      "js": ["js/jquery.js", "js/xlsx.js", "js/content-script.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
