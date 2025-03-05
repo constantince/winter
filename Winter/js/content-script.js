@@ -1,140 +1,136 @@
-// document.addEventListener('DOMContentLoaded', initialization);
-// const URLs = window.location.href;
-console.log("content-script.js loaded");
-// inti function
-function initialization() {
-  //https://vip1.semrush.fun/projects/
-  // const pattern = /https?:\/\/(vip\d)\.semrush\.fun\/projects\/?$/;
-  // if (!pattern.test(URLs)) {
-  //     console.error("Not in the relevant product page")
-  //     return;
-  // }
-  // code excute here;
-  console.log("start to geting data...");
-  window.location.href =
-    "https://vip1.semrush.fun/analytics/overview/?q=baidu.com&protocol=https&searchType=domain";
-}
+// 初始化内容脚本
+console.log('🔧 Content script initialized');
 
-function pause() {
-  console.log("paused...");
-}
-
-// 添加一个初始化消息，确认脚本已加载
-console.log("Content script loaded");
-
-// 监听来自popup的消息
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log("Content script received message:", message);
-
-  if (message.action === "ping") {
-    console.log("Received ping, sending pong");
-    sendResponse({ pong: true });
-    return true;
-  }
-
-  if (message.action === "startProcessing") {
-    const urls = message.data.urls;
-    console.log(`收到 ${urls.length} 个URL准备处理:`, urls);
-
-    // 立即回复已收到消息
-    sendResponse({ status: "started" });
-
-    // 开始处理URLs
-    processUrls(urls)
-      .then(() => {
-        // 所有URL处理完成后，发送完成消息
-        chrome.runtime.sendMessage({
-          action: "processingComplete",
-          data: {
-            total: urls.length,
-            timestamp: new Date().getTime(),
-          },
-        });
-      })
-      .catch((error) => {
-        // 处理出错时发送错误消息
-        chrome.runtime.sendMessage({
-          action: "processingError",
-          error: error.message,
-        });
-      });
-
-    return true;
-  }
+// DOM加载完成后执行
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM loaded, checking URL pattern');
+    
+    // 匹配当前页面URL
+    const currentPageUrl = window.location.href;
+    const urlPattern = /^https:\/\/vip\d\.semrush\.fun\/analytics\/overview\/\?q=.*&protocol=https&searchType=domain$/;
+    
+    if (urlPattern.test(currentPageUrl)) {
+        console.log('✅ Matched URL pattern');
+        // 使用MutationObserver监听DOM变化
+        observeDOM();
+    } else {
+        console.log('⚠️ URL pattern not matched');
+    }
 });
 
-// 处理URLs的函数
-async function processUrls(urls) {
-  console.log("开始处理URLs...");
+// 监听DOM变化
+function observeDOM() {
+    console.log('👀 Starting to observe DOM changes');
+    
+    // 创建观察者
+    const observer = new MutationObserver((mutations) => {
+        // 检查是否存在目标元素
+        const countryElement = document.querySelector("div.___SRow_1hl9u-red-team .___SText_13vkm-red-team");
+        const trafficElement = document.querySelector("div.___SRow_1hl9u-red-team .___SFlex_1wav9-red-team");
+        
+        if (countryElement && trafficElement) {
+            console.log('🎯 Found target elements');
+            // 获取数据
+            stepOneGetDom();
+            // 停止观察
+            observer.disconnect();
+            console.log('🛑 Stopped observing DOM changes');
+        }
+    });
 
-  try {
-    for (let i = 0; i < urls.length; i++) {
-      const url = urls[i];
-      try {
-        console.log(`处理URL ${i + 1}/${urls.length}:`, url);
-        await processUrl(url);
+    // 配置观察选项
+    const config = {
+        childList: true,
+        subtree: true
+    };
 
-        // 发送进度更新
-        chrome.runtime.sendMessage({
-          action: "processingProgress",
-          data: {
-            current: i + 1,
-            total: urls.length,
-            url: url,
-          },
-        });
-      } catch (error) {
-        console.error(`处理URL失败: ${url}`, error);
-      }
+    // 开始观察
+    observer.observe(document.body, config);
+}
+
+function stepOneGetDom() {
+    try {
+        const fatherElement = document.querySelectorAll("div.___SRow_1hl9u-red-team")[1];
+        //国家
+        const countryElement = fatherElement.querySelector(".___SText_13vkm-red-team");
+        // const countryElement = document.querySelector("div.___SRow_1hl9u-red-team .___SText_13vkm-red-team");
+        const country = countryElement ? countryElement.textContent.trim() : 'Not found';
+        
+        //流量
+        const trafficElement = fatherElement.querySelector(".___SText_xheeu-red-team");
+        const traffic = trafficElement ? trafficElement.textContent.trim() : 'Not found';
+        
+        console.log("国家:", country, "流量:", traffic);
+        
+        // 如果任一元素未找到，抛出错误
+        if (country === 'Not found' || traffic === 'Not found') {
+            throw new Error('Some elements were not found on the page');
+        }
+        
+        return { country, traffic };
+    } catch (error) {
+        console.error('❌ Error getting DOM elements:', error);
+        return null;
     }
-
-    console.log("所有URL处理完成");
-
-    // 发送完成消息
-    chrome.runtime.sendMessage({
-      action: "processingComplete",
-      data: {
-        total: urls.length,
-        timestamp: new Date().getTime(),
-      },
-    });
-
-    // 清理本地数据
-    cleanupLocalData();
-  } catch (error) {
-    console.error("处理URLs时出错:", error);
-    chrome.runtime.sendMessage({
-      action: "processingError",
-      error: error.message,
-    });
-  }
 }
 
-// 清理本地数据
-function cleanupLocalData() {
-  // 清理可能存在的全局变量
-  if (window.urlExtractorData) {
-    delete window.urlExtractorData;
-  }
+// 监听来自 popup 的消息
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('📨 Content script received message:', message);
 
-  // 移除可能添加的DOM标记
-  const marker = document.getElementById("url-extractor-initialized");
-  if (marker) {
-    marker.remove();
-  }
+    switch (message.action) {
+        case 'START_PROCESSING':
+            console.log('🚀 Starting URL processing in content script');
+            handleStartProcessing();
+            break;
+        
+        // 可以添加其他消息处理...
+        default:
+            console.log('⚠️ Unknown message action:', message.action);
+    }
+});
 
-  console.log("本地数据已清理");
+// 处理开始处理的逻辑
+function handleStartProcessing() {
+    try {
+        console.log('🚀 Starting URL processing in content script');
+        
+        // 获取当前索引和URLs
+        chrome.storage.local.get(['currentUrlIndex', 'extractedUrls'], function(result) {
+            const { currentUrlIndex, extractedUrls } = result;
+            
+            if (!extractedUrls || extractedUrls.length === 0) {
+                throw new Error('No URLs found in cache');
+            }
+            
+            if (currentUrlIndex === undefined) {
+                throw new Error('No URL index found in cache');
+            }
+            
+            // 获取当前要处理的URL
+            const currentUrl = extractedUrls[currentUrlIndex];
+            console.log('📍 Current URL index:', currentUrlIndex);
+            console.log('🔗 Current URL:', currentUrl);
+            window.location.href = `https://vip1.semrush.fun/analytics/overview/?q=${currentUrl}&protocol=https&searchType=domain`
+            // 向 popup 发送确认消息
+            chrome.runtime.sendMessage({
+                action: 'CONTENT_SCRIPT_READY',
+                data: {
+                    currentIndex: currentUrlIndex,
+                    totalUrls: extractedUrls.length,
+                    currentUrl: currentUrl
+                }
+            });
+        });
+        
+    } catch (error) {
+        console.error('❌ Error in content script:', error);
+        // 向 popup 发送错误消息
+        chrome.runtime.sendMessage({
+            action: 'CONTENT_SCRIPT_ERROR',
+            error: error.message
+        });
+    }
 }
 
-// 处理单个URL的函数
-async function processUrl(url) {
-  // 这里添加实际的URL处理逻辑
-  await new Promise((resolve) => setTimeout(resolve, 100)); // 模拟处理时间
-}
 
-// 可以添加一个清理函数
-function clearStoredUrls() {
-  chrome.storage.local.remove(["extractedUrls"], function () {
-    console.log("URLs已从存储中清除");
-  });
-}
