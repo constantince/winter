@@ -9,7 +9,7 @@
     "48": "icon.png",
     "128": "icon.png"
   },
-
+    
   "action": {
           "default_icon": {
            "16": "icon.png",
@@ -19,12 +19,27 @@
             "default_title": "Start!",
         "default_popup": "popup.html"
   },
+  "permissions": [
+        "activeTab",
+        "tabs",
+        "storage"
+    ],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'"
+    },
   "content_scripts": 
   [
     {
-      "matches": ["https://*.semrush.fun/*"],
+      "matches": [
+        "https://www.semrush.fun/*",
+        "https://*.semrush.fun/*"
+      ],
       "js": ["js/jquery.js", "js/xlsx.js", "js/content-script.js"],
       "run_at": "document_start"
     }
+  ],
+  "host_permissions": [
+    "https://www.semrush.fun/*",
+    "https://*.semrush.fun/*"
   ]
 }

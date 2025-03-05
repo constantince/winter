@@ -1,12 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>My Extension</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <title>URL Extractor</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Hello, Chrome Extension!</h1>
-  <button id="start">Start</button>
-  <script src="popup.js"></script>
+    <div class="container">
+        <div class="header-section">
+            <h2>Excel URL 提取器</h2>
+            <div class="input-group">
+                <label for="excelFile">Excel文件:</label>
+                <input type="file" id="excelFile" accept=".xlsx,.xls">
+            </div>
+            <div class="input-group">
+                <label for="columnName">URL列名:</label>
+                <input type="text" id="columnName" placeholder="例如: URL" value="URL">
+            </div>
+            <div class="input-group">
+                <button id="start" class="button-primary">上传</button>
+                <button id="process" class="button-secondary" style="display: none;">开启</button>
+                <span id="status" class="status"></span>
+            </div>
+        </div>
+        <div id="result" class="results-container"></div>
+    </div>
+    
+    <script src="js/xlsx.js"></script>
+    <script src="extractUrls.js"></script>
+    <script src="popup.js"></script>
 </body>
 </html>
