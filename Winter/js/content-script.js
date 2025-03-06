@@ -1,3 +1,6 @@
+// 全局变量
+const SEMRUSH_VIP = 'vip1';
+
 // 初始化内容脚本
 console.log("🔧 Content script initialized");
 
@@ -85,24 +88,59 @@ function stepOneGetDom(countryElement, trafficElement) {
       throw new Error("Some elements were not found on the page");
     }
 
-    // 获取当前处理的URL
+    // 获取当前处理的URL和索引
     chrome.storage.local.get(
-      ["currentUrlIndex", "extractedUrls"],
+      ["currentUrlIndex", "extractedUrls", "processedData"],
       function (result) {
-        const { currentUrlIndex, extractedUrls } = result;
+        const { currentUrlIndex, extractedUrls, processedData = [] } = result;
         if (!extractedUrls || currentUrlIndex === undefined) {
           throw new Error("Failed to get current URL from storage");
         }
         let currentUrl = extractedUrls[currentUrlIndex];
 
-        // 处理 URL，移除 https:// 和 www. 前缀
-        currentUrl = currentUrl
-          .replace(/^https?:\/\//, "")
-          .replace(/^www\./, "");
-        console.log("🔗 Processed URL for next step:", currentUrl);
+        // 发送进度更新消息
+        chrome.runtime.sendMessage({
+          action: 'PROGRESS_UPDATE',
+          data: {
+            currentIndex: currentUrlIndex,
+            totalUrls: extractedUrls.length,
+            currentUrl: currentUrl,
+            stage: 'overview',
+            status: `正在获取 ${currentUrl} 的概览数据`
+          }
+        });
 
-        //开始跳转第二个界面
-        window.location.href = `https://vip1.semrush.fun/analytics/organic/positions/?filter={"search":"","volume":"","positions":"","positionsType":"all","serpFeatures":null,"intent":["transactional"],"kd":"","advanced":{}}&db=${country.toLowerCase()}&q=${currentUrl}&searchType=domain`;
+        // 处理 URL，移除 https:// 和 www. 前缀
+        const processedUrl = currentUrl.replace(/^https?:\/\//, "").replace(/^www\./, "");
+        console.log("🔗 Processed URL for next step:", processedUrl);
+
+        // 存储第一步的数据
+        const stepOneData = {
+          index: currentUrlIndex,
+          url: currentUrl,
+          country,
+          overviewTraffic: traffic,
+          keywords: [], // 将在第二步填充
+          keywordTraffic: [], // 将在第二步填充
+          searchVolume: [] // 将在第二步填充
+        };
+
+        // 更新或添加数据到缓存
+        const updatedData = [...processedData];
+        const existingIndex = updatedData.findIndex(item => item.index === currentUrlIndex);
+        if (existingIndex >= 0) {
+          updatedData[existingIndex] = { ...updatedData[existingIndex], ...stepOneData };
+        } else {
+          updatedData.push(stepOneData);
+        }
+
+        // 保存更新后的数据
+        chrome.storage.local.set({ processedData: updatedData }, function() {
+          console.log('💾 Step 1 data saved:', stepOneData);
+          
+          //开始跳转第二个界面
+          window.location.href = `https://${SEMRUSH_VIP}.semrush.fun/analytics/organic/positions/?filter={"search":"","volume":"","positions":"","positionsType":"all","serpFeatures":null,"intent":["transactional"],"kd":"","advanced":{}}&db=${country.toLowerCase()}&q=${processedUrl}&searchType=domain`;
+        });
       }
     );
   } catch (error) {
@@ -112,7 +150,146 @@ function stepOneGetDom(countryElement, trafficElement) {
 }
 
 function stepTwoGetDom() {
-  console.log("👋 Heel");
+  console.log("👀 Starting to observe positions DOM changes");
+
+  // 获取当前URL信息用于进度更新
+  chrome.storage.local.get(['currentUrlIndex', 'extractedUrls'], function(result) {
+    const { currentUrlIndex, extractedUrls } = result;
+    if (currentUrlIndex !== undefined && extractedUrls) {
+      chrome.runtime.sendMessage({
+        action: 'PROGRESS_UPDATE',
+        data: {
+          currentIndex: currentUrlIndex,
+          totalUrls: extractedUrls.length,
+          currentUrl: extractedUrls[currentUrlIndex],
+          stage: 'positions',
+          status: `正在获取关键词数据`
+        }
+      });
+    }
+  });
+
+  // 创建观察者
+  const observer = new MutationObserver((mutations) => {
+    // 检查是否存在目标元素集合
+    const fatherElements = document.querySelectorAll("h3.___SRow_a2h7d-red-team");
+    
+    if (fatherElements && fatherElements.length > 0) {
+      console.log("🎯 Found target elements:", fatherElements.length);
+      
+      // 获取前5个元素的数据（如果存在的话）
+      const keywords = [];
+      const keywordTraffic = [];
+      const searchVolume = [];
+      const elementsToProcess = Math.min(5, fatherElements.length);
+      
+      for (let i = 0; i < elementsToProcess; i++) {
+        try {
+          const element = fatherElements[i];
+          
+          // 获取关键字（使用name属性）
+          const keywordElement = element.querySelector('span.___SText_pr68d-red-team');
+          const keyword = keywordElement?.textContent.trim() || "Not found";
+          
+          // 通过name属性获取流量和搜索量
+          const trafficElement = element.querySelector('div[name="traffic"]');
+          const searchVolumeElement = element.querySelector('div[name="volume"]');
+          
+          const traffic = trafficElement?.textContent.trim() || "Not found";
+          const volume = searchVolumeElement?.textContent.trim() || "Not found";
+          
+          // 添加到数组
+          keywords.push(keyword);
+          keywordTraffic.push(traffic);
+          searchVolume.push(volume);
+
+        } catch (error) {
+          console.error(`❌ Error processing element ${i + 1}:`, error);
+        }
+      }
+      
+      // 如果成功获取到数据，更新存储
+      if (keywords.length > 0) {
+        // 获取当前存储的数据
+        chrome.storage.local.get(['currentUrlIndex', 'processedData', 'extractedUrls'], function(result) {
+          const { currentUrlIndex, processedData = [], extractedUrls = [] } = result;
+          
+          // 更新当前URL的数据
+          const updatedData = [...processedData];
+          const currentDataIndex = updatedData.findIndex(item => item.index === currentUrlIndex);
+          
+          if (currentDataIndex >= 0) {
+            updatedData[currentDataIndex] = {
+              ...updatedData[currentDataIndex],
+              keywords,
+              keywordTraffic,
+              searchVolume
+            };
+            
+            // 保存更新后的数据
+            chrome.storage.local.set({ processedData: updatedData }, function() {
+              console.log('💾 Step 2 data saved for index:', currentUrlIndex);
+              console.log('📊 Current data:', updatedData[currentDataIndex]);
+
+              // 发送进度更新消息
+              chrome.runtime.sendMessage({
+                action: 'PROGRESS_UPDATE',
+                data: {
+                  currentIndex: currentUrlIndex,
+                  totalUrls: extractedUrls.length,
+                  currentUrl: extractedUrls[currentUrlIndex],
+                  stage: 'complete',
+                  status: `已完成数据获取`,
+                  processedData: updatedData[currentDataIndex]
+                }
+              });
+
+              // 检查是否还有下一个URL需要处理
+              const nextIndex = currentUrlIndex + 1;
+              if (nextIndex < extractedUrls.length) {
+                // 更新索引并处理下一个URL
+                chrome.storage.local.set({ currentUrlIndex: nextIndex }, function() {
+                  console.log('⏭️ Moving to next URL, index:', nextIndex);
+                  const nextUrl = extractedUrls[nextIndex];
+                  window.location.href = `https://${SEMRUSH_VIP}.semrush.fun/analytics/overview/?q=${nextUrl}&protocol=https&searchType=domain`;
+                });
+              } else {
+                // 所有URL都处理完成
+                console.log('✅ All URLs processed!');
+                console.log('📊 Final processed data:', JSON.stringify(updatedData, null, 2));
+                
+                // 发送完成消息给popup
+                chrome.runtime.sendMessage({
+                  action: 'PROCESSING_COMPLETE',
+                  data: {
+                    processedUrls: updatedData.length,
+                    totalUrls: extractedUrls.length,
+                    finalData: updatedData
+                  }
+                });
+              }
+            });
+          } else {
+            console.error('❌ No matching data found for current index:', currentUrlIndex);
+          }
+        });
+        
+        // 停止观察
+        observer.disconnect();
+        console.log("🛑 Stopped observing DOM changes");
+      }
+    }
+  });
+
+  // 配置观察选项
+  const config = {
+    childList: true,
+    subtree: true
+  };
+
+  // 开始观察
+  observer.observe(document.body, config);
+  console.log("🔄 Started observing DOM for positions data");
 }
 
 // 监听来自 popup 的消息
@@ -154,7 +331,7 @@ function handleStartProcessing() {
         const currentUrl = extractedUrls[currentUrlIndex];
         console.log("📍 Current URL index:", currentUrlIndex);
         console.log("🔗 Current URL:", currentUrl);
-        window.location.href = `https://vip1.semrush.fun/analytics/overview/?q=${currentUrl}&protocol=https&searchType=domain`;
+        window.location.href = `https://${SEMRUSH_VIP}.semrush.fun/analytics/overview/?q=${currentUrl}&protocol=https&searchType=domain`;
         // 向 popup 发送确认消息
         chrome.runtime.sendMessage({
           action: "CONTENT_SCRIPT_READY",
