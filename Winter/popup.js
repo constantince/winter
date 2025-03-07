@@ -31,7 +31,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function initializeExtension() {
-  const startButton = document.getElementById("start");
   const processButton = document.getElementById("process");
   const resultElement = document.getElementById("result");
   const statusElement = document.getElementById("status");
@@ -40,16 +39,61 @@ function initializeExtension() {
 
   // 初始化时获取处理状态
   chrome.storage.local.get(
-    ['processingStatus', 'currentUrlIndex', 'extractedUrls', 'processedData'],
+    ['processingStatus', 'currentUrlIndex', 'extractedUrls', 'processedData', 'currentProcessingState'],
     function(result) {
-      const { processingStatus, currentUrlIndex, extractedUrls, processedData = [] } = result;
+      const { 
+        processingStatus, 
+        currentUrlIndex, 
+        extractedUrls, 
+        processedData = [],
+        currentProcessingState 
+      } = result;
       
-      if (processingStatus === 'processing') {
-        // 如果正在处理中，显示加载状态
-        showProcessingStatus(currentUrlIndex, extractedUrls);
-      } else if (processingStatus === 'completed') {
-        // 如果处理完成，显示下载按钮
-        showCompletionStatus(processedData);
+      console.log('💾 Restored state:', {
+        processingStatus,
+        currentUrlIndex,
+        urlsCount: extractedUrls?.length,
+        processedCount: processedData.length,
+        currentState: currentProcessingState
+      });
+
+      // 根据不同的处理状态恢复界面
+      switch (processingStatus) {
+        case 'processing':
+          // 如果正在处理中，显示最新的处理状态
+          if (currentProcessingState) {
+            updateProcessingStatus(currentProcessingState);
+          } else {
+            // 如果没有当前处理状态，则使用基本信息显示
+            showProcessingStatus(currentUrlIndex, extractedUrls);
+          }
+          break;
+
+        case 'completed':
+          // 如果处理完成，显示完成状态和下载按钮
+          showCompletionStatus(processedData);
+          break;
+
+        case 'idle':
+          // 如果是空闲状态，但有已提取的URL，显示URL列表
+          if (extractedUrls && extractedUrls.length > 0) {
+            displayResults(extractedUrls);
+          }
+          break;
+
+        case 'error':
+          // 如果之前发生错误，显示错误状态
+          if (currentProcessingState?.error) {
+            handleProcessingError(currentProcessingState.error);
+          }
+          break;
+
+        default:
+          // 默认显示初始状态
+          if (fileInput) fileInput.style.display = 'block';
+          if (columnInput) columnInput.style.display = 'block';
+          if (headerSection) headerSection.style.display = 'block';
+          break;
       }
     }
   );
@@ -314,6 +358,12 @@ function initializeExtension() {
     if (processButton) processButton.style.display = 'none';
     if (resultElement) resultElement.innerHTML = '';
     
+    // 隐藏header-section
+    const headerSection = document.querySelector('.header-section');
+    if (headerSection) {
+      headerSection.style.display = 'none';
+    }
+
     // 显示处理状态
     statusElement.innerHTML = `
       <div class="processing-status">
@@ -339,33 +389,47 @@ function initializeExtension() {
     if (processButton) processButton.style.display = 'none';
     if (resultElement) resultElement.innerHTML = '';
 
-    statusElement.innerHTML = `
-      <div class="completion-status">
-        <div class="success-icon">✅</div>
-        <div class="status-text">
-          处理完成！共处理 ${processedData.length} 条数据
-        </div>
-        <div class="button-group">
-          <button id="downloadBtn" class="button-primary">
-            <span class="icon">📥</span>
-            <span>下载数据</span>
-          </button>
-          <button id="resetBtn" class="button-secondary">
-            <span class="icon">🔄</span>
-            <span>重新开始</span>
-          </button>
-        </div>
-      </div>
-    `;
+    // 隐藏header-section
+    const headerSection = document.querySelector('.header-section');
+    if (headerSection) {
+      headerSection.style.display = 'none';
+    }
 
+    // 更新整个container的内容
+    const container = document.querySelector('.container');
+    if (container) {
+      container.innerHTML = `
+        <div class="completion-status">
+          <div class="success-icon">✅</div>
+          <div class="status-text">
+            处理完成！共处理 ${processedData.length} 条数据
+          </div>
+          <div class="button-group">
+            <button id="downloadBtn" class="button-primary">
+              <span class="icon">📥</span>
+              <span>下载数据</span>
+            </button>
+            <button id="resetBtn" class="button-secondary">
+              <span class="icon">🔄</span>
+              <span>重新开始</span>
+            </button>
+          </div>
+        </div>
+      `;
+
+      // 重新添加按钮事件监听器
+      addCompletionButtonListeners(processedData);
+    }
+  }
+
+  // 添加完成状态按钮的事件监听器
+  function addCompletionButtonListeners(processedData) {
     // 添加下载按钮点击事件
     document.getElementById('downloadBtn').addEventListener('click', function() {
-      // 创建下载文件
       const dataStr = JSON.stringify(processedData, null, 2);
       const blob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       
-      // 创建下载链接
       const a = document.createElement('a');
       a.href = url;
       a.download = `processed_data_${new Date().toISOString().slice(0,10)}.json`;
@@ -380,30 +444,107 @@ function initializeExtension() {
       // 清除所有存储的数据
       await chrome.storage.local.clear();
       
-      // 重置UI
+      // 显示初始界面元素
+      const headerSection = document.querySelector('.header-section');
+      if (headerSection) {
+        headerSection.style.display = 'block';
+      }
+
+      // 显示输入元素
       if (fileInput) {
         fileInput.style.display = 'block';
-        fileInput.value = '';
+        fileInput.value = ''; // 清除已选择的文件
       }
       if (columnInput) {
         columnInput.style.display = 'block';
-        columnInput.value = '';
+        columnInput.value = ''; // 清除输入的列名
       }
-      if (resultElement) resultElement.innerHTML = '';
-      if (statusElement) statusElement.innerHTML = '';
-      
-      // 重置按钮状态
+
+      // 隐藏进度状态和完成状态
+      const processingStatus = document.querySelector('.processing-status');
+      if (processingStatus) {
+        processingStatus.style.display = 'none';
+      }
+      const completionStatus = document.querySelector('.completion-status');
+      if (completionStatus) {
+        completionStatus.style.display = 'none';
+      }
+
+      // 重置结果区域
+      if (resultElement) {
+        resultElement.innerHTML = '';
+      }
+
+      // 重置状态区域
+      if (statusElement) {
+        statusElement.innerHTML = '';
+      }
+
+      // 重置处理按钮
       if (processButton) {
         processButton.style.display = 'none';
         processButton.disabled = false;
         processButton.dataset.status = 'idle';
         processButton.textContent = '开始处理';
       }
+
+      // 显示重置成功消息
+      showStatus("已重置，请重新上传文件", "success");
     });
+
+    // 文件上传处理函数
+    async function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) {
+        showStatus("请选择Excel文件", "error");
+        return;
+      }
+
+      // 检查文件类型
+      console.log('📁 File type:', file.type);
+      const validTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel',
+        'text/csv'
+      ];
+      
+      if (!validTypes.includes(file.type) && !file.name.endsWith('.xlsx') && !file.name.endsWith('.xls') && !file.name.endsWith('.csv')) {
+        showStatus("请上传有效的Excel文件（.xlsx, .xls）或CSV文件", "error");
+        return;
+      }
+
+      try {
+        showStatus("正在处理Excel文件...", "processing");
+        const userColumnName = columnInput.value.trim();
+        const urls = await extractUrlsFromExcel(file, userColumnName);
+        displayResults(urls);
+      } catch (error) {
+        console.error("❌ Error processing file:", error);
+        showStatus(error.message, "error");
+      }
+    }
+
+    // 处理按钮点击处理函数
+    async function handleProcessButtonClick() {
+      const currentStatus = processButton.dataset.status;
+      if (currentStatus === 'idle' || currentStatus === 'error') {
+        console.log('📤 Starting URL processing');
+        await startProcessing();
+      }
+    }
   }
 
   // 处理错误
   function handleProcessingError(error) {
+    // 保存错误状态
+    chrome.storage.local.set({
+      processingStatus: 'error',
+      currentProcessingState: {
+        status: 'error',
+        error: error
+      }
+    });
+
     statusElement.innerHTML = `
       <div class="error-status">
         <div class="error-icon">❌</div>
@@ -422,34 +563,46 @@ function initializeExtension() {
     const { currentIndex, totalUrls, currentUrl, stage, status } = data;
     console.log('🔄 Updating progress:', currentIndex + 1, '/', totalUrls, 'Stage:', stage);
     
+    // 保存当前处理状态到storage
+    chrome.storage.local.set({ currentProcessingState: data });
+    
     // 隐藏特定UI元素
     if (fileInput) fileInput.style.display = 'none';
     if (columnInput) columnInput.style.display = 'none';
     if (processButton) processButton.style.display = 'none';
     if (resultElement) resultElement.innerHTML = '';
 
-    // 更新进度显示
-    statusElement.innerHTML = `
-      <div class="processing-status">
-        <div class="spinner"></div>
-        <div class="status-text">
-          正在处理 ${currentIndex + 1}/${totalUrls}
-          <div class="stage-info">${status}</div>
-          <div class="current-url">${currentUrl}</div>
-        </div>
-      </div>
-    `;
+    // 隐藏header-section
+    const headerSection = document.querySelector('.header-section');
+    if (headerSection) {
+      headerSection.style.display = 'none';
+    }
 
-    // 强制重绘界面
-    statusElement.style.display = 'none';
-    statusElement.offsetHeight; // 触发重排
-    statusElement.style.display = 'block';
+    // 更新整个container的内容
+    const container = document.querySelector('.container');
+    if (container) {
+      container.innerHTML = `
+        <div class="processing-status">
+          <div class="spinner"></div>
+          <div class="status-text">
+            正在处理 ${currentIndex + 1}/${totalUrls}
+            <div class="stage-info">${status}</div>
+            <div class="current-url">${currentUrl}</div>
+          </div>
+        </div>
+      `;
+    }
   }
 
   // 处理完成
   function handleProcessingComplete(data) {
     chrome.storage.local.set({ 
-      processingStatus: 'completed'
+      processingStatus: 'completed',
+      processedData: data.finalData,
+      currentProcessingState: {
+        status: 'completed',
+        data: data.finalData
+      }
     }, function() {
       showCompletionStatus(data.finalData);
     });
@@ -543,22 +696,3 @@ function initializeExtension() {
   document.head.appendChild(style);
 }
 
-function tabState(action) {
-  if (action === "Start") {
-    startButton.innerText = "Pause";
-  } else {
-    startButton.innerText = "Start";
-  }
-}
-
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "dataScraped") {
-    const data = message.data;
-    console.log("Scraped Data:", data);
-    // 在这里处理抓取到的数据，例如显示在 popup 页面上
-  }
-});
-
-function changeBackgroundColor() {
-  document.body.style.backgroundColor = "#ffcc00";
-}
