@@ -2,27 +2,24 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>URL Extractor</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Semrush Data Extractor</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <div class="header-section">
-            <h2>数据处理器</h2>
-            <div class="input-group">
-                <label for="excelFile">Excel文件:</label>
-                <input type="file" id="excelFile" accept=".xlsx,.xls">
+        <div class="upload-section">
+            <div class="upload-icon">📁</div>
+            <div class="file-input-wrapper">
+                <input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
+                <button class="upload-button">选择文件</button>
             </div>
-            <div class="input-group">
-                <button id="process" class="button-secondary" style="display: none;">开启</button>
-                <span id="status" class="status"></span>
-            </div>
+            <div class="upload-text">支持 .xlsx, .xls, .csv 格式</div>
         </div>
-        <div id="result" class="results-container"></div>
+        <div id="status"></div>
+        <div id="result"></div>
+        <button id="process" style="display: none;">开始处理</button>
     </div>
-    
     <script src="js/xlsx.js"></script>
-    <script src="extractUrls.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>

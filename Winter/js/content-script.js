@@ -4,9 +4,9 @@ const SEMRUSH_VIP = "zh4";
 // 初始化内容脚本
 console.log("SEMRUSH: 🔧 Content script initialized");
 
-// DOM加载完成后执行
-document.addEventListener("DOMContentLoaded", function () {
-  console.log("SEMRUSH: 📄 DOM loaded, checking URL pattern");
+// 主要功能初始化函数
+function initializeScript() {
+  console.log("SEMRUSH: 📄 Checking URL pattern");
 
   // 匹配当前页面URL
   const currentPageUrl = window.location.href;
@@ -41,7 +41,16 @@ document.addEventListener("DOMContentLoaded", function () {
   } else {
     console.log("SEMRUSH: ⚠️ URL pattern not matched");
   }
-});
+}
+
+// 检查文档是否已经加载完成
+if (document.readyState === "loading") {
+  // 如果文档还在加载中，添加事件监听器
+  document.addEventListener("DOMContentLoaded", initializeScript);
+} else {
+  // 如果文档已经加载完成，直接执行
+  initializeScript();
+}
 
 // collection urls
 function collectionUrls() {
@@ -78,9 +87,20 @@ function collectionUrls() {
           // 获取当前要处理的URL
           const currentEntry = extractedUrls[currentUrlIndex || 0];
           console.log("SEMRUSH: 🔗 Current entry:", currentEntry);
+          // 使用 getCountryCode 获取国家代码
+          const countryCode = getCountryCode(currentEntry.country);
+          if (countryCode === null) {
+            // 没有对应的编码
+            // 前往域名概览
+            console.log("SEMRUSH: 🔗 没有对应的编码");
 
-          // 前往域名概览
-          window.location.href = `${usingDomain}/analytics/overview/?q=${currentEntry.url}&protocol=https&searchType=domain`;
+            window.location.href = `${usingDomain}/analytics/overview/?q=${currentEntry.url}&protocol=https&searchType=domain`;
+          } else {
+            // 有对应的编码 开始第二部
+            console.log("SEMRUSH: 🔗 有对应的编码", countryCode);
+            setCountyAndUrlIntoStorage(countryCode);
+            // window.location.href = `${usingDomain}/analytics/organic/positions/?filter={"search":"","volume":"","positions":"","positionsType":"all","serpFeatures":null,"intent":["commercial","transactional"],"kd":"","advanced":{}}&db=${countryCode}&q=${currentEntry.url}&searchType=domain`;
+          }
 
           // 向 popup 发送确认消息
           chrome.runtime.sendMessage({
@@ -307,6 +327,77 @@ function getDoms01(callback) {
   console.log("SEMRUSH: 🔄 Started observing DOM for keywords data");
 }
 
+// set county and url into storage
+function setCountyAndUrlIntoStorage(country) {
+  // 获取当前处理的URL和索引
+  chrome.storage.local.get(
+    ["currentUrlIndex", "extractedUrls", "processedData"],
+    function (result) {
+      const { currentUrlIndex, extractedUrls, processedData = [] } = result;
+      if (!extractedUrls || currentUrlIndex === undefined) {
+        throw new Error("Failed to get current URL from storage");
+      }
+      let currentEntry = extractedUrls[currentUrlIndex];
+
+      // 发送进度更新消息
+      chrome.runtime.sendMessage({
+        action: "PROGRESS_UPDATE",
+        data: {
+          currentIndex: currentUrlIndex,
+          totalUrls: extractedUrls.length,
+          currentUrl: currentEntry.url,
+          stage: "overview",
+          status: `正在获取 ${currentEntry.url} 的概览数据（第1步/共3步）`,
+        },
+      });
+
+      // 处理 URL，移除 https:// 和 www. 前缀
+      const processedUrl = currentEntry.url
+        .replace(/^https?:\/\//, "")
+        .replace(/^www\./, "");
+      console.log("SEMRUSH: 🔗 Processed URL for next step:", processedUrl);
+
+      // 存储第一步的数据
+      const stepOneData = {
+        index: currentUrlIndex,
+        url: currentEntry.url,
+        expectedCountry: currentEntry.country,
+        actualCountry: country,
+      };
+
+      // 更新或添加数据到缓存
+      const updatedData = [...processedData];
+      const existingIndex = updatedData.findIndex(
+        (item) => item.index === currentUrlIndex
+      );
+      if (existingIndex >= 0) {
+        updatedData[existingIndex] = {
+          ...updatedData[existingIndex],
+          ...stepOneData,
+        };
+      } else {
+        updatedData.push(stepOneData);
+      }
+
+      // 保存更新后的数据
+      chrome.storage.local.set({ processedData: updatedData }, function () {
+        console.log("SEMRUSH: 💾 Step 1 data saved:", stepOneData);
+
+        //读取缓存中的usingDomain开始跳转第二个界面
+        chrome.storage.local.get(["usingDomain"], function (result) {
+          const usingDomain = result.usingDomain;
+          if (!usingDomain) {
+            throw new Error("No domain found in cache");
+          }
+          // 使用 getCountryCode 获取国家代码
+          const countryCode = country.toLowerCase();
+          window.location.href = `${usingDomain}/analytics/organic/positions/?filter={"search":"","volume":"","positions":"","positionsType":"all","serpFeatures":null,"intent":["commercial","transactional"],"kd":"","advanced":{}}&db=${countryCode}&q=${processedUrl}&searchType=domain`;
+        });
+      });
+    }
+  );
+}
+
 // 在域名概览中获取 最大流量国家 没有指定国家的前提
 function stepOneGetDom(countryElement) {
   try {
@@ -381,7 +472,10 @@ function stepOneGetDom(countryElement) {
             if (!usingDomain) {
               throw new Error("No domain found in cache");
             }
-            window.location.href = `${usingDomain}/analytics/organic/positions/?filter={"search":"","volume":"","positions":"","positionsType":"all","serpFeatures":null,"intent":["commercial","transactional"],"kd":"","advanced":{}}&db=${country.toLowerCase()}&q=${processedUrl}&searchType=domain`;
+            // 使用 getCountryCode 获取国家代码
+            const countryCode =
+              getCountryCode(country) || country.toLowerCase();
+            window.location.href = `${usingDomain}/analytics/organic/positions/?filter={"search":"","volume":"","positions":"","positionsType":"all","serpFeatures":null,"intent":["commercial","transactional"],"kd":"","advanced":{}}&db=${countryCode}&q=${processedUrl}&searchType=domain`;
           });
         });
       }
@@ -759,7 +853,7 @@ function stepTwoGetDom() {
                       data: {
                         currentIndex: currentUrlIndex,
                         totalUrls: extractedUrls.length,
-                        currentUrl: extractedUrls[currentUrlIndex],
+                        currentUrl: processedUrl,
                         stage: "complete",
                         status: `已完成数据获取`,
                         processedData: updatedData[currentDataIndex],

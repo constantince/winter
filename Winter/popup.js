@@ -77,7 +77,9 @@ function initializeExtension() {
 
         case "completed":
           // 如果处理完成，显示完成状态和下载按钮
-          showCompletionStatus(processedData);
+          if (processedData && processedData.length > 0) {
+            showCompletionStatus(processedData);
+          }
           break;
 
         case "idle":
@@ -684,6 +686,9 @@ function initializeExtension() {
 
   // 处理完成
   function handleProcessingComplete(data) {
+    console.log("🎉 Processing complete:", data);
+
+    // 更新存储状态
     chrome.storage.local.set(
       {
         processingStatus: "completed",
@@ -694,7 +699,18 @@ function initializeExtension() {
         },
       },
       function () {
-        showCompletionStatus(data.finalData);
+        console.log("💾 Completion state saved");
+        // 确保数据存在且有效
+        if (
+          data.finalData &&
+          Array.isArray(data.finalData) &&
+          data.finalData.length > 0
+        ) {
+          showCompletionStatus(data.finalData);
+        } else {
+          console.error("❌ Invalid completion data:", data);
+          handleProcessingError("处理完成，但数据无效");
+        }
       }
     );
   }
