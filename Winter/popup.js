@@ -149,7 +149,8 @@ function initializeExtension() {
         });
 
         // 更新界面状态
-        showProcessingStatus(0, await getExtractedUrls());
+        const entries = await getExtractedUrls();
+        showProcessingStatus(0, entries);
 
         // 发送开始处理消息
         chrome.runtime.sendMessage({ action: "START_PROCESSING" });
@@ -205,27 +206,32 @@ function initializeExtension() {
         "currentUrlIndex",
       ]);
 
-      // 获取用户输入的列名
-      const userColumnName = columnInput.value.trim();
-      console.log("🔍 Looking for column:", userColumnName);
+      // 自定义列名
+      const columnNames = {
+        url: ["url", "URL", "Url", "网址", "域名"],
+        country: ["country", "Country", "COUNTRY", "国家", "地区"],
+      };
+      console.log("🔍 Looking for columns:", columnNames);
 
       // 处理新文件
-      const urls = await extractUrlsFromExcel(file, userColumnName);
+      const entries = await extractUrlsFromExcel(file, columnNames);
 
-      if (urls.length === 0) {
+      if (entries.length === 0) {
         showStatus("未找到URL", "warning");
         resultElement.innerHTML = `
           <div class="error-message">
             <p>在指定列中没有找到任何URL。请检查：</p>
             <ul>
-              <li>列名是否正确（当前：${userColumnName}）</li>
+              <li>列名是否正确（当前URL列名可选：${columnNames.url.join(
+                ", "
+              )}）</li>
               <li>Excel文件是否包含URL数据</li>
               <li>URL单元格是否为空</li>
             </ul>
           </div>`;
       } else {
         // 显示结果并保存数据
-        displayResults(urls);
+        displayResults(entries);
       }
     } catch (error) {
       console.error("❌ Error processing file:", error);
@@ -244,9 +250,9 @@ function initializeExtension() {
   });
 
   // Excel文件处理函数
-  async function extractUrlsFromExcel(file, columnName) {
+  async function extractUrlsFromExcel(file, columnNames) {
     console.log("📑 Processing Excel file:", file.name);
-    console.log("🔍 Looking for column:", columnName);
+    console.log("🔍 Looking for columns:", columnNames);
 
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -262,60 +268,89 @@ function initializeExtension() {
           const worksheet = workbook.Sheets[firstSheetName];
 
           // 转换为JSON
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-            header: "A",
-            raw: true,
-            defval: "",
-          });
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
           // 查找目标列
-          let targetColumn = null;
-          const firstRow = jsonData[0];
+          let urlColumn = null;
+          let countryColumn = null;
 
-          for (let key in firstRow) {
-            if (
-              String(firstRow[key]).trim().toLowerCase() ===
-              columnName.toLowerCase()
-            ) {
-              targetColumn = key;
-              break;
-            }
+          // 获取第一行的所有列名
+          if (jsonData.length > 0) {
+            const firstRow = jsonData[0];
+            const headers = Object.keys(firstRow);
+
+            // 查找URL列
+            urlColumn = headers.find((header) =>
+              columnNames.url.some(
+                (name) =>
+                  String(header).trim().toLowerCase() === name.toLowerCase()
+              )
+            );
+
+            // 查找country列
+            countryColumn = headers.find((header) =>
+              columnNames.country.some(
+                (name) =>
+                  String(header).trim().toLowerCase() === name.toLowerCase()
+              )
+            );
           }
 
-          if (!targetColumn) {
-            reject(new Error(`未找到列名 "${columnName}"`));
+          if (!urlColumn || !countryColumn) {
+            reject(
+              new Error(
+                `未找到必要的列名。需要URL列（${columnNames.url.join(
+                  ", "
+                )}）和country列（${columnNames.country.join(", ")}）`
+              )
+            );
             return;
           }
 
-          // 提取URLs
-          const urls = jsonData
-            .slice(1)
+          console.log("Found columns:", { urlColumn, countryColumn });
+
+          // 提取数据
+          const entries = jsonData
             .map((row) => {
-              const url = row[targetColumn];
-              if (!url) return null;
+              const url = row[urlColumn];
+              const country = row[countryColumn];
+
+              if (!url || !country) return null;
 
               const urlStr = String(url).trim();
               try {
-                if (
+                const processedUrl =
                   !urlStr.startsWith("http://") &&
                   !urlStr.startsWith("https://")
-                ) {
-                  return "https://" + urlStr;
-                }
-                new URL(urlStr);
-                return urlStr;
+                    ? "https://" + urlStr
+                    : urlStr;
+                new URL(processedUrl); // 验证URL格式
+                return {
+                  url: processedUrl,
+                  country: String(country).trim(),
+                };
               } catch (error) {
                 return null;
               }
             })
-            .filter((url) => url !== null);
+            .filter((entry) => entry !== null);
 
-          if (urls.length === 0) {
-            reject(new Error("未找到有效的URL"));
+          if (entries.length === 0) {
+            reject(new Error("未找到有效的URL和country数据"));
             return;
           }
 
-          resolve(urls);
+          // 保存URL和country组合到缓存中
+          chrome.storage.local.set(
+            {
+              extractedUrls: entries,
+              processingStatus: "idle",
+            },
+            function () {
+              console.log("💾 Entries saved:", entries.length);
+              resolve(entries);
+            }
+          );
         } catch (error) {
           reject(new Error("Excel文件处理失败: " + error.message));
         }
@@ -327,16 +362,19 @@ function initializeExtension() {
   }
 
   // 显示结果
-  function displayResults(urls) {
-    console.log("📝 Displaying results for URLs:", urls.length);
+  function displayResults(entries) {
+    console.log("📝 Displaying results for entries:", entries.length);
 
-    const urlList = urls
+    const entriesList = entries
       .map(
-        (url, index) => `
+        (entry, index) => `
         <div class="url-item">
             <span class="url-number">${index + 1}.</span>
-            <div class="url-link">
-                <a href="${url}" target="_blank" title="${url}">${url}</a>
+            <div class="url-info">
+                <a href="${entry.url}" target="_blank" title="${entry.url}">${
+          entry.url
+        }</a>
+                <span class="country-tag">${entry.country}</span>
             </div>
         </div>
       `
@@ -345,28 +383,18 @@ function initializeExtension() {
 
     resultElement.innerHTML = `
         <div class="success-message">
-            <strong>提取结果（共 ${urls.length} 个URL）：</strong>
+            <strong>提取结果（共 ${entries.length} 条数据）：</strong>
         </div>
         <div class="url-list">
-            ${urlList}
-      </div>
+            ${entriesList}
+        </div>
     `;
 
-    // 保存URLs到存储
-    chrome.storage.local.set(
-      {
-        extractedUrls: urls,
-        processingStatus: "idle",
-      },
-      function () {
-        console.log("💾 URLs saved:", urls.length);
-        processButton.style.display = "inline-block";
-        processButton.disabled = false;
-        processButton.dataset.status = "idle";
-        processButton.textContent = "开始处理";
-        showStatus(`已保存 ${urls.length} 个URL`, "success");
-      }
-    );
+    processButton.style.display = "inline-block";
+    processButton.disabled = false;
+    processButton.dataset.status = "idle";
+    processButton.textContent = "开始处理";
+    showStatus(`已保存 ${entries.length} 条数据`, "success");
   }
 
   // 显示状态信息
@@ -388,10 +416,10 @@ function initializeExtension() {
   }
 
   // 显示处理状态
-  function showProcessingStatus(currentIndex, urls) {
-    if (!urls) return;
+  function showProcessingStatus(currentIndex, entries) {
+    if (!entries) return;
 
-    const currentUrl = urls[currentIndex];
+    const currentEntry = entries[currentIndex];
 
     // 隐藏特定UI元素
     if (fileInput) fileInput.style.display = "none";
@@ -410,8 +438,9 @@ function initializeExtension() {
       <div class="processing-status">
         <div class="spinner"></div>
         <div class="status-text">
-          正在处理 ${currentIndex + 1}/${urls.length}
-          <div class="current-url">${currentUrl}</div>
+          正在处理 ${currentIndex + 1}/${entries.length}
+          <div class="current-url">${currentEntry.url}</div>
+          <div class="current-country">${currentEntry.country}</div>
         </div>
       </div>
     `;
@@ -568,8 +597,8 @@ function initializeExtension() {
       try {
         showStatus("正在处理Excel文件...", "processing");
         const userColumnName = columnInput.value.trim();
-        const urls = await extractUrlsFromExcel(file, userColumnName);
-        displayResults(urls);
+        const entries = await extractUrlsFromExcel(file, userColumnName);
+        displayResults(entries);
       } catch (error) {
         console.error("❌ Error processing file:", error);
         showStatus(error.message, "error");
