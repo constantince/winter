@@ -2,10 +2,51 @@
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("Background script received message:", message);
 
-  if (message.action === "CHECK_REDIRECTS") {
-    handleRedirectChecks(message.data.urls, sendResponse);
-    return true; // 保持消息通道开放以进行异步响应
+  switch (message.action) {
+    case "PROGRESS_UPDATE":
+      // 更新处理状态到缓存
+      chrome.storage.local.set({
+        processingStatus: "processing",
+        currentProcessingState: message.data,
+      });
+      break;
+
+    case "PROCESSING_COMPLETE":
+      // 更新完成状态到缓存
+      chrome.storage.local.set({
+        processingStatus: "completed",
+        processedData: message.data.finalData,
+        currentProcessingState: {
+          status: "completed",
+          data: message.data.finalData,
+        },
+      });
+      break;
+
+    case "CONTENT_SCRIPT_ERROR":
+      // 更新错误状态到缓存
+      chrome.storage.local.set({
+        processingStatus: "error",
+        currentProcessingState: {
+          status: "error",
+          error: message.error,
+        },
+      });
+      break;
+
+    case "CONTENT_SCRIPT_READY":
+      // 更新准备状态到缓存
+      chrome.storage.local.set({
+        currentProcessingState: {
+          status: "ready",
+          ...message.data,
+        },
+      });
+      break;
   }
+
+  // 返回true表示会异步发送响应
+  return true;
 });
 
 // 处理重定向检查

@@ -676,16 +676,27 @@ function stepThreeGetDom() {
                 JSON.stringify(updatedData, null, 2)
               );
 
-              // 发送完成消息给popup
-              chrome.runtime.sendMessage({
-                action: "PROCESSING_COMPLETE",
-                data: {
-                  processedUrls: processedData.length,
-                  totalUrls: extractedUrls.length,
-                  finalData: processedData,
-                  status: "所有数据处理完成",
-                },
-              });
+              // 先保存最后一条数据到缓存
+              chrome.storage.local.set(
+                { processedData: updatedData },
+                function () {
+                  console.log(
+                    "SEMRUSH: 📊 Final processed data:",
+                    JSON.stringify(updatedData, null, 2)
+                  );
+
+                  // 发送完成消息给background
+                  chrome.runtime.sendMessage({
+                    action: "PROCESSING_COMPLETE",
+                    data: {
+                      processedUrls: processedData.length,
+                      totalUrls: extractedUrls.length,
+                      finalData: updatedData,
+                      status: "所有数据处理完成",
+                    },
+                  });
+                }
+              );
             }
           });
         } else {
@@ -952,7 +963,7 @@ function handleStartProcessing() {
     );
   } catch (error) {
     console.error("SEMRUSH: ❌ Error in content script:", error);
-    // 向 popup 发送错误消息
+    // 向background发送错误消息
     chrome.runtime.sendMessage({
       action: "CONTENT_SCRIPT_ERROR",
       error: error.message,
