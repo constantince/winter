@@ -242,9 +242,9 @@ async function handleFileUpload(event) {
   const file = event.target.files[0];
   if (!file) {
     console.log("❌ No file selected");
-    showStatus("请选择Excel文件", "error");
-    return;
-  }
+      showStatus("请选择Excel文件", "error");
+      return;
+    }
 
   // 检查文件类型
   console.log("📁 File type:", file.type, "File name:", file.name);
@@ -286,36 +286,36 @@ async function handleFileUpload(event) {
     const entries = await extractUrlsFromExcel(file, columnNames);
 
     if (entries.length === 0) {
-      showStatus("未找到URL", "warning");
+        showStatus("未找到URL", "warning");
       resultElement.innerHTML = `
-        <div class="error-message">
-          <p>在指定列中没有找到任何URL。请检查：</p>
-          <ul>
+          <div class="error-message">
+            <p>在指定列中没有找到任何URL。请检查：</p>
+            <ul>
             <li>列名是否正确（当前URL列名可选：${columnNames.url.join(
               ", "
             )}）</li>
-            <li>Excel文件是否包含URL数据</li>
-            <li>URL单元格是否为空</li>
-          </ul>
-        </div>`;
-    } else {
+              <li>Excel文件是否包含URL数据</li>
+              <li>URL单元格是否为空</li>
+            </ul>
+          </div>`;
+      } else {
       // 显示结果并保存数据
       displayResults(entries);
-    }
-  } catch (error) {
+      }
+    } catch (error) {
     console.error("❌ Error processing file:", error);
     showStatus(error.message, "error");
     resultElement.innerHTML = `
-      <div class="error-message">
-        <p>错误信息：${error.message}</p>
-        <p>请检查：</p>
-        <ul>
-          <li>Excel文件格式是否正确</li>
-          <li>列名是否与Excel中的完全匹配（区分大小写）</li>
-          <li>文件是否损坏</li>
-        </ul>
-      </div>`;
-  }
+        <div class="error-message">
+          <p>错误信息：${error.message}</p>
+          <p>请检查：</p>
+          <ul>
+            <li>Excel文件格式是否正确</li>
+            <li>列名是否与Excel中的完全匹配（区分大小写）</li>
+            <li>文件是否损坏</li>
+          </ul>
+        </div>`;
+    }
 }
 
 // 提取主域名的辅助函数
@@ -504,26 +504,26 @@ function displayResults(entries) {
   }
 
   const entriesList = entries
-    .map(
+      .map(
       (entry, index) => `
       <div class="url-item">
-          <span class="url-number">${index + 1}.</span>
+            <span class="url-number">${index + 1}.</span>
           <div class="url-info">
               <a href="${entry.url}" target="_blank" title="${entry.url}">${
         entry.url
       }</a>
               <span class="country-tag">${entry.country}</span>
           </div>
-      </div>
+            </div>
     `
-    )
-    .join("");
+      )
+      .join("");
 
   resultElement.innerHTML = `
-      <div class="success-message">
+        <div class="success-message">
           <strong>提取结果（共 ${entries.length} 条数据）：</strong>
-      </div>
-      <div class="url-list">
+        </div>
+        <div class="url-list">
           ${entriesList}
       </div>
   `;

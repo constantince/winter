@@ -161,17 +161,71 @@ async function handleMultipleTabs(urls) {
   }
 }
 
-// 监听来自content script的消息
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log("📨 Background script received message:", message);
-
-  if (message.action === "OPEN_MULTIPLE_TABS") {
-    if (message.data && Array.isArray(message.data.urls)) {
-      handleMultipleTabs(message.data.urls);
-      sendResponse({ status: "processing" });
-    } else {
-      sendResponse({ status: "error", message: "Invalid URLs data" });
+// 处理关闭浏览器和清空缓存的函数
+async function handleCloseBrowserAndClearCache() {
+  try {
+    console.log("🔄 开始清理缓存和关闭浏览器...");
+    
+    // 清空所有缓存数据
+    await chrome.storage.local.clear();
+    console.log("✅ 缓存已清空");
+    
+    // 获取所有标签页
+    const tabs = await chrome.tabs.query({});
+    console.log(`📑 找到 ${tabs.length} 个标签页`);
+    
+    // 关闭所有标签页
+    for (const tab of tabs) {
+      if (tab.id !== chrome.tabs.TAB_ID_NONE) {
+        await chrome.tabs.remove(tab.id);
+        console.log(`✅ 已关闭标签页: ${tab.url}`);
+      }
     }
-    return true; // 表示会异步发送响应
+    
+    // 关闭浏览器窗口
+    const windows = await chrome.windows.getAll();
+    for (const window of windows) {
+      await chrome.windows.remove(window.id);
+      console.log(`✅ 已关闭窗口: ${window.id}`);
+    }
+    
+    console.log("✅ 所有操作已完成");
+  } catch (error) {
+    console.error("❌ 清理缓存和关闭浏览器时出错:", error);
+    throw error;
+  }
+}
+
+// 监听来自content script的消息
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log("📨 收到消息:", request);
+
+  if (request.action === "OPEN_MULTIPLE_TABS") {
+    if (request.data && Array.isArray(request.data.urls)) {
+      handleMultipleTabs(request.data.urls)
+        .then(() => {
+          console.log("✅ 所有标签页处理完成");
+          sendResponse({ success: true });
+        })
+        .catch((error) => {
+          console.error("❌ 处理标签页时出错:", error);
+          sendResponse({ success: false, error: error.message });
+        });
+      return true; // 保持消息通道开放
+    } else {
+      console.error("❌ 无效的URL数组");
+      sendResponse({ success: false, error: "无效的URL数组" });
+    }
+  } else if (request.action === "CLOSE_BROWSER_AND_CLEAR_CACHE") {
+    handleCloseBrowserAndClearCache()
+      .then(() => {
+        console.log("✅ 浏览器关闭和缓存清理完成");
+        sendResponse({ success: true });
+      })
+      .catch((error) => {
+        console.error("❌ 关闭浏览器和清理缓存时出错:", error);
+        sendResponse({ success: false, error: error.message });
+      });
+    return true; // 保持消息通道开放
   }
 });

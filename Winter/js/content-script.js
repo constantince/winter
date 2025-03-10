@@ -2,7 +2,7 @@
 const SEMRUSH_VIP = "zh4";
 const OBSERVER_TIMEOUT = 2 * 60 * 1000; //  2 分钟超时
 const FALLBACK_URL = "https://www.semrush.fun/home"; // 超时后返回的URL
-
+let shouldStopScroll = false; // 控制是否停止滚动
 // 初始化内容脚本
 console.log("SEMRUSH: 🔧 Content script initialized");
 
@@ -160,10 +160,11 @@ function initMenu() {
           console.log("SEMRUSH: 💾 URLs and APIs saved to cache");
           console.log("SEMRUSH: 💾 Combined APIs:", combinedApis);
 
-          // 将第一个 URL 存储到 usingDomain 缓存中
-          const firstUrl = urls[0];
-          chrome.storage.local.set({ usingDomain: firstUrl }, function () {
-            console.log("SEMRUSH: 💾 First URL saved to usingDomain cache:", firstUrl);
+          // 将第随机的一个 URL 存储到 usingDomain 缓存中
+          const randomIndex = Math.floor(Math.random() * urls.length);
+          const RandomUrl = urls[randomIndex];
+          chrome.storage.local.set({ usingDomain: RandomUrl }, function () {
+            console.log("SEMRUSH: 💾 First URL saved to usingDomain cache:", RandomUrl);
           });
 
           // 发送消息通知 URLs 已保存
@@ -173,7 +174,7 @@ function initMenu() {
               urls: urls,
               apis: combinedApis,
               count: urls.length,
-              usingDomain: firstUrl,
+              usingDomain: RandomUrl,
             },
           });
         });
@@ -624,6 +625,10 @@ function stepThreeGetDom() {
     };
 
     const scrollPage = () => {
+
+      if(shouldStopScroll){
+        return;
+      }
       // 检查是否达到最大滚动次数
       if (scrollAttempts >= maxScrollAttempts) {
         console.log("SEMRUSH: ⚠️ Max scroll attempts reached");
@@ -684,7 +689,7 @@ function stepThreeGetDom() {
             ...updatedData[currentDataIndex],
             ...data,
           };
-
+          shouldStopScroll = true;
           console.log("SEMRUSH: 更新后的数据:", updatedData);
 
           // 保存更新后的数据
@@ -966,12 +971,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case "START_PROCESSING":
       console.log("SEMRUSH: 🚀 Starting URL processing in content script");
       handleStartProcessing();
+      sendResponse({ status: "processing_started" });
       break;
 
     // 可以添加其他消息处理...
     default:
       console.log("SEMRUSH: ⚠️ Unknown message action:", message.action);
+      sendResponse({ status: "unknown_action" });
   }
+  return false; // 表示同步处理完成
 });
 
 // 处理开始处理的逻辑
