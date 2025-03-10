@@ -318,6 +318,33 @@ async function handleFileUpload(event) {
   }
 }
 
+// 提取主域名的辅助函数
+function extractMainDomain(url) {
+  try {
+    // 确保URL有协议
+    let fullUrl = url;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      fullUrl = 'https://' + url;
+    }
+    
+    const urlObj = new URL(fullUrl);
+    let domain = urlObj.hostname;
+    
+    // 移除 www. 前缀
+    domain = domain.replace(/^www\./, '');
+    
+    // 获取主域名（最后两个部分）
+    const parts = domain.split('.');
+    if (parts.length > 2) {
+      return parts.slice(-2).join('.');
+    }
+    return domain;
+  } catch (error) {
+    console.error('域名提取失败:', url, error);
+    return null;
+  }
+}
+
 // Excel文件处理函数
 async function extractUrlsFromExcel(file, columnNames) {
   console.log("📑 Processing Excel file:", file.name);
@@ -378,44 +405,78 @@ async function extractUrlsFromExcel(file, columnNames) {
 
         console.log("Found columns:", { urlColumn, countryColumn });
 
-        // 提取数据
-        const entries = jsonData
-          .map((row) => {
-            const url = row[urlColumn];
-            const country = row[countryColumn];
+        // 用于存储已处理的域名
+        const processedDomains = new Map();
+        const domainToUrls = new Map(); // 存储每个域名对应的所有URL
 
-            if (!url || !country) return null;
+        // 第一次遍历：收集每个域名的所有URL
+        jsonData.forEach((row, index) => {
+          const url = row[urlColumn];
+          const country = row[countryColumn];
 
-            const urlStr = String(url).trim();
-            try {
-              const processedUrl =
-                !urlStr.startsWith("http://") && !urlStr.startsWith("https://")
-                  ? "https://" + urlStr
-                  : urlStr;
-              new URL(processedUrl); // 验证URL格式
-              return {
-                url: processedUrl,
-                country: String(country).trim(),
-              };
-            } catch (error) {
-              return null;
+          if (!url || !country) return;
+
+          const urlStr = String(url).trim();
+          const mainDomain = extractMainDomain(urlStr);
+
+          if (mainDomain) {
+            if (!domainToUrls.has(mainDomain)) {
+              domainToUrls.set(mainDomain, []);
             }
-          })
-          .filter((entry) => entry !== null);
+            domainToUrls.get(mainDomain).push({
+              url: urlStr,
+              country: String(country).trim()
+            });
+          }
+        });
+
+        // 第二次遍历：为每个域名选择最合适的URL
+        domainToUrls.forEach((urls, domain) => {
+          console.log(`处理域名 ${domain} 的 ${urls.length} 个URL:`);
+          
+          // 选择最短的URL作为代表（通常是主域名）
+          const selectedEntry = urls.reduce((shortest, current) => {
+            // 移除协议和末尾斜杠，便于比较长度
+            const cleanUrl = current.url.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '');
+            const shortestClean = shortest.url.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '');
+            
+            return cleanUrl.length < shortestClean.length ? current : shortest;
+          }, urls[0]);
+
+          // 确保URL格式正确
+          let finalUrl = selectedEntry.url;
+          if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+            finalUrl = 'https://' + finalUrl;
+          }
+
+          processedDomains.set(domain, {
+            url: finalUrl,
+            country: selectedEntry.country
+          });
+
+          console.log(`✅ 选择URL: ${finalUrl} (共 ${urls.length} 个URL)`);
+        });
+
+        // 转换Map为数组
+        const entries = Array.from(processedDomains.values());
 
         if (entries.length === 0) {
           reject(new Error("未找到有效的URL和country数据"));
           return;
         }
 
-        // 保存URL和country组合到缓存中
+        console.log("SEMRUSH: 🔍 处理前数据条数:", jsonData.length);
+        console.log("SEMRUSH: ✨ 去重后数据条数:", entries.length);
+        console.log("SEMRUSH: 📝 去重后的域名列表:", Array.from(processedDomains.keys()));
+
+        // 保存去重后的URL和country组合到缓存中
         chrome.storage.local.set(
           {
             extractedUrls: entries,
             processingStatus: "idle",
           },
           function () {
-            console.log("💾 Entries saved:", entries.length);
+            console.log("SEMRUSH: 💾 去重后的数据已保存:", entries);
             resolve(entries);
           }
         );
@@ -536,11 +597,11 @@ function addCompletionButtonListeners(processedData) {
         商务类关键词占比: item.businessIntent,
         商务和交易关键词: commercialData.keywords,
         商务和交易意图: commercialData.intents,
-        商务和交易搜索量: commercialData.traffic,
-        商务和交易流量: commercialData.volume,
+        商务和交易流量: commercialData.traffic,
+        商务和交易搜索量: commercialData.volume,
         商务和交易关键词难度系数: commercialData.kd,
         自然关键词: naturalData.keywords,
-        自然流量: naturalData.volume,
+        自然搜索量: naturalData.volume,
         自然关键词意图: naturalData.intentBadge,
       };
     });
