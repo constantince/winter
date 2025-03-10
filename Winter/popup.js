@@ -145,23 +145,19 @@ function initializeExtension() {
 
       // 设置初始索引缓存和处理状态
       await chrome.storage.local.set({
-        currentUrlIndex: 0,
         processingStatus: "processing",
       });
 
-      // 更新界面状态
-      const entries = await getExtractedUrls();
-      showProcessingStatus(0, entries);
-
-      // 发送开始处理消息到content script
-      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-        if (tabs[0]) {
-          chrome.tabs.sendMessage(tabs[0].id, {
-            action: "START_PROCESSING",
-            message: "开始处理URLs",
-          });
-        }
+      // 发送开始处理消息到background script
+      chrome.runtime.sendMessage({
+        action: "START_BATCH_PROCESSING",
+        data: {
+          message: "开始批量处理URLs",
+        },
       });
+
+      // 更新界面状态
+      showStatus("正在处理中...", "processing");
     }
   });
 
@@ -242,9 +238,9 @@ async function handleFileUpload(event) {
   const file = event.target.files[0];
   if (!file) {
     console.log("❌ No file selected");
-      showStatus("请选择Excel文件", "error");
-      return;
-    }
+    showStatus("请选择Excel文件", "error");
+    return;
+  }
 
   // 检查文件类型
   console.log("📁 File type:", file.type, "File name:", file.name);
@@ -286,7 +282,7 @@ async function handleFileUpload(event) {
     const entries = await extractUrlsFromExcel(file, columnNames);
 
     if (entries.length === 0) {
-        showStatus("未找到URL", "warning");
+      showStatus("未找到URL", "warning");
       resultElement.innerHTML = `
           <div class="error-message">
             <p>在指定列中没有找到任何URL。请检查：</p>
@@ -298,11 +294,11 @@ async function handleFileUpload(event) {
               <li>URL单元格是否为空</li>
             </ul>
           </div>`;
-      } else {
+    } else {
       // 显示结果并保存数据
       displayResults(entries);
-      }
-    } catch (error) {
+    }
+  } catch (error) {
     console.error("❌ Error processing file:", error);
     showStatus(error.message, "error");
     resultElement.innerHTML = `
@@ -315,7 +311,7 @@ async function handleFileUpload(event) {
             <li>文件是否损坏</li>
           </ul>
         </div>`;
-    }
+  }
 }
 
 // 提取主域名的辅助函数
@@ -323,24 +319,24 @@ function extractMainDomain(url) {
   try {
     // 确保URL有协议
     let fullUrl = url;
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      fullUrl = 'https://' + url;
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      fullUrl = "https://" + url;
     }
-    
+
     const urlObj = new URL(fullUrl);
     let domain = urlObj.hostname;
-    
+
     // 移除 www. 前缀
-    domain = domain.replace(/^www\./, '');
-    
+    domain = domain.replace(/^www\./, "");
+
     // 获取主域名（最后两个部分）
-    const parts = domain.split('.');
+    const parts = domain.split(".");
     if (parts.length > 2) {
-      return parts.slice(-2).join('.');
+      return parts.slice(-2).join(".");
     }
     return domain;
   } catch (error) {
-    console.error('域名提取失败:', url, error);
+    console.error("域名提取失败:", url, error);
     return null;
   }
 }
@@ -425,7 +421,7 @@ async function extractUrlsFromExcel(file, columnNames) {
             }
             domainToUrls.get(mainDomain).push({
               url: urlStr,
-              country: String(country).trim()
+              country: String(country).trim(),
             });
           }
         });
@@ -433,32 +429,44 @@ async function extractUrlsFromExcel(file, columnNames) {
         // 第二次遍历：为每个域名选择最合适的URL
         domainToUrls.forEach((urls, domain) => {
           console.log(`处理域名 ${domain} 的 ${urls.length} 个URL:`);
-          
+
           // 选择最短的URL作为代表（通常是主域名）
           const selectedEntry = urls.reduce((shortest, current) => {
             // 移除协议和末尾斜杠，便于比较长度
-            const cleanUrl = current.url.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '');
-            const shortestClean = shortest.url.replace(/^(https?:\/\/)?(www\.)?/, '').replace(/\/$/, '');
-            
+            const cleanUrl = current.url
+              .replace(/^(https?:\/\/)?(www\.)?/, "")
+              .replace(/\/$/, "");
+            const shortestClean = shortest.url
+              .replace(/^(https?:\/\/)?(www\.)?/, "")
+              .replace(/\/$/, "");
+
             return cleanUrl.length < shortestClean.length ? current : shortest;
           }, urls[0]);
 
           // 确保URL格式正确
           let finalUrl = selectedEntry.url;
-          if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
-            finalUrl = 'https://' + finalUrl;
+          if (
+            !finalUrl.startsWith("http://") &&
+            !finalUrl.startsWith("https://")
+          ) {
+            finalUrl = "https://" + finalUrl;
           }
 
           processedDomains.set(domain, {
             url: finalUrl,
-            country: selectedEntry.country
+            country: selectedEntry.country,
+            status: "unprocessed",
           });
 
           console.log(`✅ 选择URL: ${finalUrl} (共 ${urls.length} 个URL)`);
         });
 
-        // 转换Map为数组
-        const entries = Array.from(processedDomains.values());
+        // 转换Map为数组，确保包含status字段
+        const entries = Array.from(processedDomains.values()).map((entry) => ({
+          url: entry.url,
+          country: entry.country,
+          status: entry.status || "unprocessed", // 确保status字段被包含
+        }));
 
         if (entries.length === 0) {
           reject(new Error("未找到有效的URL和country数据"));
@@ -467,7 +475,10 @@ async function extractUrlsFromExcel(file, columnNames) {
 
         console.log("SEMRUSH: 🔍 处理前数据条数:", jsonData.length);
         console.log("SEMRUSH: ✨ 去重后数据条数:", entries.length);
-        console.log("SEMRUSH: 📝 去重后的域名列表:", Array.from(processedDomains.keys()));
+        console.log(
+          "SEMRUSH: 📝 去重后的域名列表:",
+          Array.from(processedDomains.keys())
+        );
 
         // 保存去重后的URL和country组合到缓存中
         chrome.storage.local.set(
@@ -504,7 +515,7 @@ function displayResults(entries) {
   }
 
   const entriesList = entries
-      .map(
+    .map(
       (entry, index) => `
       <div class="url-item">
             <span class="url-number">${index + 1}.</span>
@@ -516,8 +527,8 @@ function displayResults(entries) {
           </div>
             </div>
     `
-      )
-      .join("");
+    )
+    .join("");
 
   resultElement.innerHTML = `
         <div class="success-message">
