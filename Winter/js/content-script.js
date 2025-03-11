@@ -12,6 +12,7 @@ console.log("SEMRUSH: 🔧 Content script initialized");
 
 // 主要功能初始化函数
 function initializeScript() {
+  
   console.log("SEMRUSH: 📄 Checking URL pattern");
 
   // 匹配当前页面URL
@@ -46,26 +47,86 @@ function initializeScript() {
     console.log("SEMRUSH: ✅ Matched last URL pattern");
     // 执行第三步
     stepThreeGetDom();
+    // stepTest();
+    
   } else if (entryUrlPattern.test(currentPageUrl)) {
     // 进入初始化界面
     console.log("SEMRUSH: ready to start");
     // 初始化菜单链接
     initMenu();
     // 检查尝试次数
-    checkAttemptCount(collectionUrls);
+    collectionUrls();
   } else {
     console.log("SEMRUSH: ⚠️ URL pattern not matched");
   }
 }
 
-// 检查文档是否已经加载完成
-if (document.readyState === "loading") {
-  // 如果文档还在加载中，添加事件监听器
-  document.addEventListener("DOMContentLoaded", initializeScript);
-} else {
-  // 如果文档已经加载完成，直接执行
-  initializeScript();
+
+document.addEventListener("DOMContentLoaded", initializeScript);
+
+
+function startToScrolling() {
+  
+  // 初始化滚动相关变量
+  let scrollAttempts = 0;
+  const maxScrollAttempts = 10000;
+  const scrollStep = 320;
+  let isScrollingDown = true;
+
+  const isAtBottom = () => {
+    return (
+      window.innerHeight + window.pageYOffset >=
+      document.documentElement.scrollHeight - 10
+    );
+  };
+
+  const isAtTop = () => {
+    return window.pageYOffset <= 10;
+  };
+
+  const performScroll = () => {
+    if (shouldStopScroll) {
+      if (scrollIntervalId) {
+        clearInterval(scrollIntervalId);
+      }
+      return;
+    }
+
+    if (scrollAttempts >= maxScrollAttempts) {
+      console.log("SEMRUSH: ⚠️ Max scroll attempts reached");
+      if (scrollIntervalId) {
+        clearInterval(scrollIntervalId);
+      }
+      return;
+    }
+
+    if (isScrollingDown && isAtBottom()) {
+      isScrollingDown = false;
+      console.log("SEMRUSH: 🔄 Reached bottom, scrolling up");
+    } else if (!isScrollingDown && isAtTop()) {
+      isScrollingDown = true;
+      console.log("SEMRUSH: 🔄 Reached top, scrolling down");
+    }
+
+    window.scrollBy({
+      top: isScrollingDown ? scrollStep : -scrollStep,
+      behavior: "instant",
+    });
+
+    scrollAttempts++;
+    console.log(
+      `SEMRUSH: 📜 Scroll attempt ${scrollAttempts}/${maxScrollAttempts} (${
+        isScrollingDown ? "⬇️" : "⬆️"
+      })`
+    );
+  };
+
+  // 立即开始滚动
+  console.log("SEMRUSH: 🔄 Starting scroll interval");
+  scrollIntervalId = setInterval(performScroll, 1000);
+
 }
+
 
 function initMenyAndJump() {
   chrome.storage.local.get(["usingDomain", "extractedUrls"], function (result) {
@@ -97,11 +158,12 @@ function initMenyAndJump() {
       // 前往域名概览
       console.log("SEMRUSH: 🔗 没有对应的编码");
 
-      window.location.href = `${domain}/analytics/overview/?q=${currentEntry.url}&protocol=https&searchType=domain&processingUrl=${processingUrl}`;
+      window.location.href = `${domain}/analytics/overview/?db=${countryCode || "us"}&q=${currentEntry.url}&protocol=https&searchType=domain&processingUrl=${processingUrl}`;
     } else {
+      window.location.href = `${domain}/analytics/overview/?db=${countryCode || "us"}&q=${currentEntry.url}&protocol=https&searchType=domain&processingUrl=${processingUrl}`;
       // 有对应的编码 开始第二部
-      console.log("SEMRUSH: 🔗 有对应的编码", countryCode);
-      setCountyAndUrlIntoStorage(countryCode);
+      // console.log("SEMRUSH: 🔗 有对应的编码", countryCode);
+      // setCountyAndUrlIntoStorage(countryCode);
     }
 
     // 向 popup 发送确认消息
@@ -276,129 +338,108 @@ function observeDOM() {
 }
 
 function getDoms01(callback) {
-  console.log("SEMRUSH: 👀 Starting to observe keywords_by_intent section");
+  console.log("SEMRUSH: 📊 Starting to collect data");
 
-  // 设置超时定时器
-  const timeoutId = setTimeout(() => {
-    handleTimeout(observer);
-  }, OBSERVER_TIMEOUT);
+  try {
+    // 直接获取所需元素
+    const grantFatherElement = document.querySelector(
+      'section[data-at="keywords_by_intent"]'
+    );
+    const trafficFatherElement = document.querySelector(
+      'div[data-at="do-summary-ot"]'
+    );
 
-  // 创建观察者
-  const observer = new MutationObserver((mutations) => {
-    // 检查一个底部元素是否存在 作为判断是否加载完成
-    const bottomFatherElement = document.querySelector(
+    const trafficElement = trafficFatherElement.querySelector(
+      'a[data-at="main-number"]'
+    );
+    const trafficValue = trafficElement?.textContent.trim() || "Not found";
+
+    console.log("SEMRUSH: 🎯 Found keywords_by_intent section");
+
+    const fatherElement1 = grantFatherElement.querySelector(
+      'div.___SRow_1hl9u-red-team[aria-rowindex="4"]'
+    );
+    const fatherElement2 = grantFatherElement.querySelector(
+      'div.___SRow_1hl9u-red-team[aria-rowindex="5"]'
+    );
+
+    // 获取商业意图百分比
+    const businessIntent =
+      fatherElement1
+        ?.querySelector(".___SText_xheeu-red-team")
+        ?.textContent.trim() || "0%";
+
+    console.log("SEMRUSH: 商业意图百分比:", businessIntent);
+
+    // 获取交易意图百分比
+    const transactionIntent =
+      fatherElement2
+        ?.querySelector(".___SText_xheeu-red-team")
+        ?.textContent.trim() || "0%";
+
+    console.log("SEMRUSH: 交易意图百分比:", transactionIntent);
+
+    // 获取主要自然搜索关键词
+    const grantFatherElement01 = document.querySelectorAll(
+      'section[data-at="do-organic-keywords"] .___SRow_1hl9u-red-team'
+    );
+    const naturalSearchKeywords = [];
+    grantFatherElement01.forEach((element) => {
+      const keywordElement = element.querySelector("a[data-at='keyword']");
+      const intentBadgeElement = element.querySelector(
+        'div[data-at="intent-badges"]'
+      );
+      const volumeElement = element.querySelector(
+        "div[data-at='value-volume']"
+      );
+
+      const keyword = keywordElement?.textContent.trim() || "Not found";
+      const volume = volumeElement?.textContent.trim() || "Not found";
+      const intentBadge =
+        intentBadgeElement?.textContent.trim() || "Not found";
+
+      naturalSearchKeywords.push({ keyword, volume, intentBadge });
+    });
+    console.log("SEMRUSH: 主要自然搜索关键词:", naturalSearchKeywords);
+
+    // 获取品牌与非品牌占比
+    const fatherElementBrand = document.querySelector(
       'div[data-at="br-vs-nonbr-legend"]'
     );
-    console.log("SEMRUSH: 底部元素加载转态:", bottomFatherElement);
 
-    console.log("最后一个页面的元素加载转态:", bottomFatherElement);
+    const brandElement = fatherElementBrand?.querySelector(
+      'a[data-at="value-0"]'
+    );
+    const nonBrandElement = fatherElementBrand?.querySelector(
+      'a[data-at="value-1"]'
+    );
 
-    if (bottomFatherElement) {
-      // 清除超时定时器
-      clearTimeout(timeoutId);
+    const brandRatio = brandElement?.textContent.trim() || "Not found";
+    const nonBrandRatio = nonBrandElement?.textContent.trim() || "Not found";
 
-      const grantFatherElement = document.querySelector(
-        'section[data-at="keywords_by_intent"]'
-      );
-      const trafficFatherElement = document.querySelector(
-        'div[data-at="do-summary-ot"]'
-      );
+    console.log("SEMRUSH: 品牌:", brandRatio, "非品牌:", nonBrandRatio);
 
-      const trafficElement = trafficFatherElement.querySelector(
-        'a[data-at="main-number"]'
-      );
-      const trafficValue = trafficElement?.textContent.trim() || "Not found";
-
-      console.log("SEMRUSH: 🎯 Found keywords_by_intent section");
-
-      const fatherElement1 = grantFatherElement.querySelector(
-        'div.___SRow_1hl9u-red-team[aria-rowindex="4"]'
-      );
-      const fatherElement2 = grantFatherElement.querySelector(
-        'div.___SRow_1hl9u-red-team[aria-rowindex="5"]'
-      );
-
-      // 获取商业意图百分比
-      const businessIntent =
-        fatherElement1
-          ?.querySelector(".___SText_xheeu-red-team")
-          ?.textContent.trim() || "0%";
-
-      console.log("SEMRUSH: 商业意图百分比:", businessIntent);
-
-      // 获取交易意图百分比
-      const transactionIntent =
-        fatherElement2
-          ?.querySelector(".___SText_xheeu-red-team")
-          ?.textContent.trim() || "0%";
-
-      console.log("SEMRUSH: 交易意图百分比:", transactionIntent);
-
-      // 获取主要自然搜索关键词
-      const grantFatherElement01 = document.querySelectorAll(
-        'section[data-at="do-organic-keywords"] .___SRow_1hl9u-red-team'
-      );
-      const naturalSearchKeywords = [];
-      grantFatherElement01.forEach((element) => {
-        const keywordElement = element.querySelector("a[data-at='keyword']");
-        const intentBadgeElement = element.querySelector(
-          'div[data-at="intent-badges"]'
-        );
-        const volumeElement = element.querySelector(
-          "div[data-at='value-volume']"
-        );
-
-        const keyword = keywordElement?.textContent.trim() || "Not found";
-        const volume = volumeElement?.textContent.trim() || "Not found";
-        const intentBadge =
-          intentBadgeElement?.textContent.trim() || "Not found";
-
-        naturalSearchKeywords.push({ keyword, volume, intentBadge });
-      });
-      console.log("SEMRUSH: 主要自然搜索关键词:", naturalSearchKeywords);
-
-      // 获取品牌与非品牌占比
-      const fatherElementBrand = document.querySelector(
-        'div[data-at="br-vs-nonbr-legend"]'
-      );
-
-      const brandElement = fatherElementBrand?.querySelector(
-        'a[data-at="value-0"]'
-      );
-      const nonBrandElement = fatherElementBrand?.querySelector(
-        'a[data-at="value-1"]'
-      );
-
-      const brandRatio = brandElement?.textContent.trim() || "Not found";
-      const nonBrandRatio = nonBrandElement?.textContent.trim() || "Not found";
-
-      console.log("SEMRUSH: 品牌:", brandRatio, "非品牌:", nonBrandRatio);
-
-      // 停止观察
-      observer.disconnect();
-      console.log("SEMRUSH: 🛑 Stopped observing DOM changes");
-
-      // 执行回调函数，传递获取到的数据
-      callback({
-        businessIntent,
-        transactionIntent,
-        naturalSearchKeywords,
-        brandRatio,
-        nonBrandRatio,
-        trafficValue,
-      });
-    }
-  });
-
-  // 配置观察选项
-  const config = {
-    childList: true,
-    subtree: true,
-  };
-
-  // 开始观察
-  observer.observe(document.body, config);
-  console.log("SEMRUSH: 🔄 Started observing DOM for keywords data");
+    // 执行回调函数，传递获取到的数据
+    callback({
+      businessIntent,
+      transactionIntent,
+      naturalSearchKeywords,
+      brandRatio,
+      nonBrandRatio,
+      trafficValue,
+    });
+  } catch (error) {
+    console.error("SEMRUSH: ❌ Error collecting data:", error);
+    // 如果出错，返回默认值
+    callback({
+      businessIntent: "0%",
+      transactionIntent: "0%",
+      naturalSearchKeywords: [],
+      brandRatio: "Not found",
+      nonBrandRatio: "Not found",
+      trafficValue: "Not found",
+    });
+  }
 }
 
 // set county and url into storage
@@ -562,7 +603,7 @@ function stepOneGetDom(countryElement) {
 
 function stepThreeGetDom() {
   console.log("SEMRUSH: 🚀 Starting step three - checking next URL");
-
+  // alert("SEMRUSH: 📄 start to scroll");
   let observer; // 在外部声明 observer 变量
   let scrollIntervalId; // 声明滚动间隔变量
 
@@ -573,6 +614,72 @@ function stepThreeGetDom() {
       clearInterval(scrollIntervalId);
     }
   }, OBSERVER_TIMEOUT);
+
+
+  // 初始化滚动相关变量
+  let scrollAttempts = 0;
+  const maxScrollAttempts = 10000;
+  const scrollStep = 320;
+  let isScrollingDown = true;
+
+  const isAtBottom = () => {
+    return (
+      window.innerHeight + window.pageYOffset >=
+      document.documentElement.scrollHeight - 10
+    );
+  };
+
+  const isAtTop = () => {
+    return window.pageYOffset <= 10;
+  };
+
+  const performScroll = () => {
+    if (shouldStopScroll) {
+      if (scrollIntervalId) {
+        clearInterval(scrollIntervalId);
+      }
+      return;
+    }
+
+    if (scrollAttempts >= maxScrollAttempts) {
+      console.log("SEMRUSH: ⚠️ Max scroll attempts reached");
+      if (scrollIntervalId) {
+        clearInterval(scrollIntervalId);
+      }
+      return;
+    }
+
+    if (isScrollingDown && isAtBottom()) {
+      isScrollingDown = false;
+      console.log("SEMRUSH: 🔄 Reached bottom, scrolling up");
+    } else if (!isScrollingDown && isAtTop()) {
+      isScrollingDown = true;
+      console.log("SEMRUSH: 🔄 Reached top, scrolling down");
+    }
+
+    window.scrollBy({
+      top: isScrollingDown ? scrollStep : -scrollStep,
+      behavior: "instant",
+    });
+
+    scrollAttempts++;
+    console.log(
+      `SEMRUSH: 📜 Scroll attempt ${scrollAttempts}/${maxScrollAttempts} (${
+        isScrollingDown ? "⬇️" : "⬆️"
+      })`
+    );
+  };
+
+  // 立即开始滚动
+  console.log("SEMRUSH: 🔄 Starting scroll interval");
+  scrollIntervalId = setInterval(performScroll, 2000);
+
+  // 处理标签页可见性变化
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      console.log("SEMRUSH: 📑 Tab hidden, continuing scroll");
+    }
+  });
 
   // 创建一个Promise来处理数据获取
   const dataPromise = new Promise((resolve) => {
@@ -614,91 +721,6 @@ function stepThreeGetDom() {
     // 开始观察
     observer.observe(document.body, config);
     console.log("SEMRUSH: 🔄 Started observing DOM changes");
-
-    // 开始滚动过程
-    let scrollAttempts = 0;
-    const maxScrollAttempts = 10000;
-    const scrollStep = 320;
-    let isScrollingDown = true; // 控制滚动方向
-
-    const checkElements = () => {
-      const bottomElement = document.querySelector(
-        'div[data-at="br-vs-nonbr-legend"]'
-      );
-      const keywordsSection = document.querySelector(
-        'section[data-at="keywords_by_intent"]'
-      );
-      const topElement = document.querySelector('div[data-at="do-summary-ot"]');
-
-      if (bottomElement && keywordsSection && topElement) {
-        return true;
-      }
-      return false;
-    };
-
-    const isAtBottom = () => {
-      return (
-        window.innerHeight + window.pageYOffset >=
-        document.documentElement.scrollHeight - 10
-      );
-    };
-
-    const isAtTop = () => {
-      return window.pageYOffset <= 10;
-    };
-
-    const performScroll = () => {
-      if (shouldStopScroll) {
-        if (scrollIntervalId) {
-          clearInterval(scrollIntervalId);
-        }
-        return;
-      }
-
-      // 检查是否达到最大滚动次数
-      if (scrollAttempts >= maxScrollAttempts) {
-        console.log("SEMRUSH: ⚠️ Max scroll attempts reached");
-        if (scrollIntervalId) {
-          clearInterval(scrollIntervalId);
-        }
-        return;
-      }
-
-      // 根据当前位置决定滚动方向
-      if (isScrollingDown && isAtBottom()) {
-        // 到达底部，改变方向
-        isScrollingDown = false;
-        console.log("SEMRUSH: 🔄 Reached bottom, scrolling up");
-      } else if (!isScrollingDown && isAtTop()) {
-        // 到达顶部，改变方向
-        isScrollingDown = true;
-        console.log("SEMRUSH: 🔄 Reached top, scrolling down");
-      }
-
-      // 执行滚动
-      window.scrollBy({
-        top: isScrollingDown ? scrollStep : -scrollStep,
-        behavior: "instant", // 使用 instant 来确保立即滚动
-      });
-
-      scrollAttempts++;
-      console.log(
-        `SEMRUSH: 📜 Scroll attempt ${scrollAttempts}/${maxScrollAttempts} (${
-          isScrollingDown ? "⬇️" : "⬆️"
-        })`
-      );
-    };
-
-    // 开始定时滚动
-    console.log("SEMRUSH: 🔄 Starting scroll interval");
-    scrollIntervalId = setInterval(performScroll, 1000);
-
-    // 处理标签页可见性变化
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        console.log("SEMRUSH: 📑 Tab hidden, continuing scroll");
-      }
-    });
   });
 
   // 处理数据获取完成后的操作
@@ -1058,7 +1080,7 @@ function handleStartProcessing() {
           throw new Error("No domain found in cache");
         }
         // 前往域名概览，从索引0开始
-        window.location.href = `${usingDomain}/analytics/overview/?q=${currentEntry.url}&protocol=https&searchType=domain&processingUrl=0`;
+        window.location.href = `${usingDomain}/analytics/overview/?db=${currentEntry.country || "us"}&q=${currentEntry.url}&protocol=https&searchType=domain&processingUrl=0`;
       });
 
       // 向 popup 发送确认消息
@@ -1164,4 +1186,60 @@ function openMultipleTabs(urls) {
       urls: urls,
     },
   });
+}
+
+function stepTest() {
+  // 发送消息给background.js要求激活当前标签
+  chrome.runtime.sendMessage({
+    action: "ACTIVATE_CURRENT_TAB",
+    data: {
+      message: "Requesting to activate current tab",
+      url: window.location.href
+    }
+  });
+
+  let observer; // 在外部声明 observer 变量
+  // 创建观察者实例
+  observer = new MutationObserver((mutations) => {
+  console.log(document.body)
+ 
+    const bottomElement = document.querySelector(
+      'div[data-at="br-vs-nonbr-legend"]'
+    );
+    const keywordsSection = document.querySelector(
+      'section[data-at="keywords_by_intent"]'
+    );
+    const topElement = document.querySelector('div[data-at="do-summary-ot"]');
+
+    const naturalElement = document.querySelector(
+      'div[data-at="top-keywords-table"]'
+    );
+    
+    if (topElement && keywordsSection && bottomElement && naturalElement) {
+      console.log("SEMRUSH: ✅ Target element found");
+      
+      // 停止观察
+      observer.disconnect();
+      
+      // 通知background.js关闭当前标签页
+      chrome.runtime.sendMessage({
+        action: "CLOSE_CURRENT_TAB",
+        data: {
+          message: "Target element found, ready to close",
+          url: window.location.href
+        }
+      });
+    }
+  });
+
+  // 配置观察选项
+  const config = {
+    childList: true,
+    subtree: true,
+    attributes: true
+  };
+
+  // 开始观察
+  observer.observe(document.body, config);
+  console.log("SEMRUSH: 👀 Started observing DOM for target element");
 }

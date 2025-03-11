@@ -1,5 +1,5 @@
 // 全局变量
-const MAX_CONCURRENT_TABS = 3; // 最大并发标签页数量
+const MAX_CONCURRENT_TABS = 1; // 最大并发标签页数量
 const MAX_TAB_LIFETIME = 2 * 60 * 1000; // 5分钟
 
 // 存储处理状态
@@ -29,6 +29,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("📨 Background script received message:", message);
 
   switch (message.action) {
+    case "ACTIVATE_CURRENT_TAB":
+      console.log("收到激活标签页的消息:", message.data);
+      // 处理激活标签页的请求
+      if (sender.tab && sender.tab.id) {
+        chrome.tabs.update(sender.tab.id, { active: true }, function(tab) {
+          console.log("✅ 成功激活标签页:", sender.tab.id);
+          sendResponse({ success: true });
+        });
+        return true; // 保持消息通道开放
+      }
+      break;
+
+    case "CLOSE_CURRENT_TAB":
+      console.log("收到啦！要关闭标签页的消息:", message.data);
+      console.log("收到！当前标签页ID是:", sender.tab.id);
+      console.log("收到！当前URL是:", message.data.url);
+      break;
+
     case "START_PROCESSING":
       // 向content script发送消息
       chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
@@ -378,7 +396,7 @@ async function handleBatchProcessing() {
 async function handleCloseAndProcessNext(data, tabId) {
   try {
     // 关闭发送消息的标签页
-    await chrome.tabs.remove(tabId);
+    // await chrome.tabs.remove(tabId);
     console.log("✅ Closed tab:", tabId);
 
     // 从storage获取URLs和semrushEntryUrls
@@ -492,7 +510,7 @@ async function processUrlBatch(urlsToProcess, allUrls, semrushUrls) {
         semrushUrls[Math.floor(Math.random() * semrushUrls.length)];
       console.log("🎲 Selected random domain for URL:", randomDomain);
 
-      const targetUrl = `${randomDomain}/analytics/overview/?q=${processedUrl}&protocol=https&searchType=domain&processingUrl=${urlIndex}`;
+      const targetUrl = `${randomDomain}/analytics/overview/?db=${"us"}&q=${processedUrl}&protocol=https&searchType=domain&processingUrl=${urlIndex}`;
       console.log("🔗 Opening URL:", targetUrl);
 
       try {

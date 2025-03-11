@@ -167,24 +167,7 @@ function initializeExtension() {
 
 // 显示处理状态
 function showProcessingStatus(currentIndex, entries) {
-  if (!entries) return;
 
-  const currentEntry = entries[currentIndex];
-
-  // 隐藏特定UI元素
-  hideUIElements();
-
-  // 显示处理状态
-  statusElement.innerHTML = `
-    <div class="processing-status">
-      <div class="spinner"></div>
-      <div class="status-text">
-        正在处理 ${currentIndex + 1}/${entries.length}
-        <div class="current-url">${currentEntry.url}</div>
-        <div class="current-country">${currentEntry.country}</div>
-      </div>
-    </div>
-  `;
 }
 
 // 显示完成状态
