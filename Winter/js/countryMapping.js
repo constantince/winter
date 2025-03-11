@@ -210,7 +210,7 @@ function getCountryCode(countryName) {
   const mapping = countryCodeMapping.find(
     (item) => Object.keys(item)[0] === countryName
   );
-  return mapping ? Object.values(mapping)[0] : null;
+  return mapping ? Object.values(mapping)[0] : "";
 }
 
 // 根据国家代码获取国家名称的函数
@@ -218,5 +218,5 @@ function getCountryName(countryCode) {
   const mapping = countryCodeMapping.find(
     (item) => Object.values(item)[0] === countryCode.toLowerCase()
   );
-  return mapping ? Object.keys(mapping)[0] : null;
+  return mapping ? Object.keys(mapping)[0] : "";
 }

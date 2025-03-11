@@ -167,7 +167,24 @@ function initializeExtension() {
 
 // 显示处理状态
 function showProcessingStatus(currentIndex, entries) {
+  if (!entries) return;
 
+  const currentEntry = entries[currentIndex];
+
+  // 隐藏特定UI元素
+  hideUIElements();
+
+  // 显示处理状态
+  statusElement.innerHTML = `
+    <div class="processing-status">
+      <div class="spinner"></div>
+      <div class="status-text">
+        正在处理 ${currentIndex + 1}/${entries.length}
+        <div class="current-url">${currentEntry.url}</div>
+        <div class="current-country">${currentEntry.country}</div>
+      </div>
+    </div>
+  `;
 }
 
 // 显示完成状态
@@ -427,15 +444,12 @@ async function extractUrlsFromExcel(file, columnNames) {
           }, urls[0]);
 
           // 确保URL格式正确
-          let finalUrl = selectedEntry.url;
-          if (
-            !finalUrl.startsWith("http://") &&
-            !finalUrl.startsWith("https://")
-          ) {
-            finalUrl = "https://" + finalUrl;
-          }
+          let finalUrl = selectedEntry.url
+            .replace(/^(https?:\/\/)?(www\.)?/, "")
+            .replace(/\/$/, "");
 
           processedDomains.set(domain, {
+            enCountry: getCountryCode(selectedEntry.country),
             url: finalUrl,
             country: selectedEntry.country,
             status: "unprocessed",
@@ -446,6 +460,7 @@ async function extractUrlsFromExcel(file, columnNames) {
 
         // 转换Map为数组，确保包含status字段
         const entries = Array.from(processedDomains.values()).map((entry) => ({
+          enCountry: entry.enCountry,
           url: entry.url,
           country: entry.country,
           status: entry.status || "unprocessed", // 确保status字段被包含
