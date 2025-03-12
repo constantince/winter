@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // 首先检查当前标签页是否在允许的域名下
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     const currentUrl = tabs[0].url;
-    const allowedDomains = ["www.semrush.fun", ".semrush.fun"];
+    const allowedDomains = ["www.semrush.fun", ".semrush.fun", "zh.trends.fast.wmxpro.com"];
 
     const isAllowedDomain = allowedDomains.some((domain) =>
       currentUrl.includes(domain)
@@ -238,9 +238,9 @@ async function handleFileUpload(event) {
   const file = event.target.files[0];
   if (!file) {
     console.log("❌ No file selected");
-    showStatus("请选择Excel文件", "error");
-    return;
-  }
+      showStatus("请选择Excel文件", "error");
+      return;
+    }
 
   // 检查文件类型
   console.log("📁 File type:", file.type, "File name:", file.name);
@@ -282,7 +282,7 @@ async function handleFileUpload(event) {
     const entries = await extractUrlsFromExcel(file, columnNames);
 
     if (entries.length === 0) {
-      showStatus("未找到URL", "warning");
+        showStatus("未找到URL", "warning");
       resultElement.innerHTML = `
           <div class="error-message">
             <p>在指定列中没有找到任何URL。请检查：</p>
@@ -294,11 +294,11 @@ async function handleFileUpload(event) {
               <li>URL单元格是否为空</li>
             </ul>
           </div>`;
-    } else {
+      } else {
       // 显示结果并保存数据
       displayResults(entries);
-    }
-  } catch (error) {
+      }
+    } catch (error) {
     console.error("❌ Error processing file:", error);
     showStatus(error.message, "error");
     resultElement.innerHTML = `
@@ -311,7 +311,7 @@ async function handleFileUpload(event) {
             <li>文件是否损坏</li>
           </ul>
         </div>`;
-  }
+    }
 }
 
 // 提取主域名的辅助函数
@@ -513,7 +513,7 @@ function displayResults(entries) {
   }
 
   const entriesList = entries
-    .map(
+      .map(
       (entry, index) => `
       <div class="url-item">
             <span class="url-number">${index + 1}.</span>
@@ -525,8 +525,8 @@ function displayResults(entries) {
           </div>
             </div>
     `
-    )
-    .join("");
+      )
+      .join("");
 
   resultElement.innerHTML = `
         <div class="success-message">

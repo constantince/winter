@@ -19,21 +19,21 @@ function initializeScript() {
 
   const entryUrlPattern = /^https:\/\/www\.semrush\.fun\/home$/;
 
-  const urlPattern =
-    /^https:\/\/.*\/analytics\/overview\/\?q=.*&protocol=https&searchType=domain&processingUrl=.*$/;
+  const overviewUrlPattern =
+    /^.*\/analytics\/overview\/\?q=.*&protocol=https/;
+
   const positionsUrlPattern =
     /^https:\/\/.*\/analytics\/organic\/positions\/\?filter=.*&db=.*&q=.*&searchType=domain&processingUrl=.*$/;
 
   const lastUrlPattern =
     /^https:\/\/.*\/analytics\/overview\/\?db=.*&q=.*&protocol=https&searchType=domain&processingUrl=.*$/;
 
-  if (urlPattern.test(currentPageUrl)) {
-    if (processingUrl === null)
-      return console.log("SEMRUSH: 📄 No processingUrl");
+  const indexPagePattern = /.*\/projects\//;
+
+  if (overviewUrlPattern.test(currentPageUrl)) {
     // 域名概览
-    console.log("SEMRUSH: ✅ Matched overview URL pattern");
-    // 使用MutationObserver监听DOM变化
-    observeDOM();
+    getOverviewData();
+
   } else if (positionsUrlPattern.test(currentPageUrl)) {
     if (processingUrl === null)
       return console.log("SEMRUSH: 📄 No processingUrl");
@@ -46,26 +46,49 @@ function initializeScript() {
     console.log("SEMRUSH: ✅ Matched last URL pattern");
     // 执行第三步
     stepThreeGetDom();
-  } else if (entryUrlPattern.test(currentPageUrl)) {
-    // 进入初始化界面
+  } else if (indexPagePattern.test(currentPageUrl)) {
+    // 进入初始化projects界面
     console.log("SEMRUSH: ready to start");
+    searchInput();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // 初始化菜单链接
-    initMenu();
+    // initMenu();
     // 检查尝试次数
-    checkAttemptCount(collectionUrls);
+    // checkAttemptCount(collectionUrls);
   } else {
     console.log("SEMRUSH: ⚠️ URL pattern not matched");
   }
 }
-
-// 检查文档是否已经加载完成
-if (document.readyState === "loading") {
-  // 如果文档还在加载中，添加事件监听器
-  document.addEventListener("DOMContentLoaded", initializeScript);
-} else {
-  // 如果文档已经加载完成，直接执行
+setTimeout(() => {
   initializeScript();
-}
+}, 1000);
+
+// // 检查文档是否已经加载完成
+// if (document.readyState === "loading") {
+//   // 如果文档还在加载中，添加事件监听器
+//   document.addEventListener("DOMContentLoaded", initializeScript);
+// } else {
+//   // 如果文档已经加载完成，直接执行
+//   initializeScript();
+// }
 
 function initMenyAndJump() {
   chrome.storage.local.get(["usingDomain", "extractedUrls"], function (result) {
@@ -137,99 +160,35 @@ function collectionUrls() {
 
 function initMenu() {
   console.log("SEMRUSH: 开始初始化菜单");
-
-  // 首先检查元素是否已经存在
-  const checkAndProcessElement = () => {
-    const fatherElement = document.querySelector("div.card-text");
-    console.log("SEMRUSH: 检查父元素:", fatherElement);
-
-    if (fatherElement) {
-      console.log("SEMRUSH: 🎯 Found target elements");
-      const urlElements = document.querySelectorAll("small.text-muted");
-      const apiElement = document.querySelectorAll("a.text-dark");
-      const urls = Array.from(urlElements).map((el) => el.textContent.trim());
-      const apis = Array.from(apiElement).map((el) => el.getAttribute("href"));
-      console.log("SEMRUSH: Found URLs:", urls);
-
-      if (urls.length > 0) {
-        // 获取当前域名
-        const currentDomain = window.location.origin;
-        // 将所有 URLs 和 APIs（与当前域名组合）存储到缓存中
-        const combinedApis = apis.map((api) => `${currentDomain}${api}`);
-
-        chrome.storage.local.set(
-          {
-            semrushEntryUrls: urls,
-            apiURLs: combinedApis,
-          },
-          function () {
-            console.log("SEMRUSH: 💾 URLs and APIs saved to cache");
-            console.log("SEMRUSH: 💾 Combined APIs:", combinedApis);
-
-            // 将第随机的一个 URL 存储到 usingDomain 缓存中
-            const randomIndex = Math.floor(Math.random() * urls.length);
-            const RandomUrl = urls[randomIndex];
-            chrome.storage.local.set({ usingDomain: RandomUrl }, function () {
-              console.log(
-                "SEMRUSH: 💾 First URL saved to usingDomain cache:",
-                RandomUrl
-              );
-            });
-
-            // 发送消息通知 URLs 已保存
-            chrome.runtime.sendMessage({
-              action: "ENTRY_URLS_SAVED",
-              data: {
-                urls: urls,
-                apis: combinedApis,
-                count: urls.length,
-                usingDomain: RandomUrl,
-              },
-            });
-          }
-        );
-        return true;
-      }
+  
+  // 直接使用固定的URL值
+  const fixedUrl = "https://zh.trends.fast.wmxpro.com/";
+  
+  // 设置为数组，保持与原逻辑兼容
+  const urlsArray = [fixedUrl];
+  
+  // 直接存储到缓存
+  chrome.storage.local.set(
+    {
+      semrushEntryUrls: urlsArray,
+      usingDomain: fixedUrl
+    },
+    function () {
+      console.log("SEMRUSH: 💾 Fixed URL saved to cache:", fixedUrl);
+      
+      // 发送消息通知 URLs 已保存
+      chrome.runtime.sendMessage({
+        action: "ENTRY_URLS_SAVED",
+        data: {
+          urls: urlsArray,
+          count: urlsArray.length,
+          usingDomain: fixedUrl,
+        },
+      });
     }
-    return false;
-  };
-
-  // 先检查一次当前DOM
-  if (checkAndProcessElement()) {
-    console.log("SEMRUSH: 元素已存在，直接处理");
-    return;
-  }
-
-  console.log("SEMRUSH: 开始观察DOM变化");
-
-  // 设置超时定时器
-  const timeoutId = setTimeout(() => {
-    handleTimeout(observer);
-  }, OBSERVER_TIMEOUT);
-
-  // 创建观察者
-  const observer = new MutationObserver((mutations, obs) => {
-    console.log("SEMRUSH: 检测到DOM变化");
-    if (checkAndProcessElement()) {
-      console.log(
-        "SEMRUSH: 🛑 Found and processed elements, stopping observer"
-      );
-      clearTimeout(timeoutId);
-      obs.disconnect();
-    }
-  });
-
-  // 配置观察选项
-  const config = {
-    childList: true,
-    subtree: true,
-    attributes: false,
-  };
-
-  // 开始观察
-  observer.observe(document.body, config);
-  console.log("SEMRUSH: 观察者已启动");
+  );
 }
+
 // 监听DOM变化
 function observeDOM() {
   console.log("SEMRUSH: 👀 Starting to observe DOM changes");
@@ -903,6 +862,8 @@ function stepTwoGetDom() {
               // 如果找不到现有数据，创建新的数据条目
               if (currentDataIndex === -1) {
                 const currentUrl = extractedUrls[Number(processingUrl)]?.url;
+                const currentCountry = extractedUrls[Number(processingUrl)]?.country;
+                const originalCountry = extractedUrls[Number(processingUrl)]?.enCountry;
                 if (!currentUrl) {
                   console.error(
                     "SEMRUSH: ❌ No URL found for index:",
@@ -911,6 +872,8 @@ function stepTwoGetDom() {
                   return;
                 }
                 updatedData.push({
+                  originalCountry,
+                  country: currentCountry,
                   index: Number(processingUrl),
                   url: currentUrl,
                   commercialAndTransactionalKeywords: keywords,
@@ -930,6 +893,20 @@ function stepTwoGetDom() {
                     "SEMRUSH: 💾 Step 2 data saved for index:",
                     processingUrl
                   );
+
+                  // 更新 extractedUrls 中对应 URL 的状态
+                  chrome.storage.local.get(['extractedUrls'], function(result) {
+                    const extractedUrls = result.extractedUrls || [];
+                    const updatedExtractedUrls = [...extractedUrls];
+                    if (updatedExtractedUrls[Number(processingUrl)]) {
+                      updatedExtractedUrls[Number(processingUrl)].status = 'processed';
+                      
+                      // 保存更新后的 extractedUrls
+                      chrome.storage.local.set({ extractedUrls: updatedExtractedUrls }, function() {
+                        console.log("SEMRUSH: 💾 Updated URL status to processed for index:", processingUrl);
+                      });
+                    }
+                  });
 
                   // 获取当前数据
                   const currentData = updatedData.find(
@@ -1000,6 +977,7 @@ function stepTwoGetDom() {
   observer.observe(document.body, config);
   console.log("SEMRUSH: 🔄 Started observing DOM for positions data");
 }
+
 // 监听来自 popup 的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("SEMRUSH: 📨 Content script received message:", message);

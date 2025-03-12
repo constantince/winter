@@ -1,6 +1,6 @@
 // 全局变量
-const MAX_CONCURRENT_TABS = 2; // 最大并发标签页数量
-const MAX_TAB_LIFETIME = 5 * 60 * 1000; // 5分钟
+const MAX_CONCURRENT_TABS = 1; // 最大并发标签页数量
+const MAX_TAB_LIFETIME = 2 * 60 * 1000; // 5分钟
 
 // 存储处理状态
 let processingState = {
@@ -493,9 +493,9 @@ async function processUrlBatch(urlsToProcess, allUrls, semrushUrls) {
       const randomDomain =
         semrushUrls[Math.floor(Math.random() * semrushUrls.length)];
       console.log("🎲 Selected random domain for URL:", randomDomain);
-
-      const targetUrl = `${randomDomain}/analytics/organic/positions/?filter={"search":"","volume":"","positions":"","positionsType":"all","serpFeatures":null,"intent":["commercial","transactional"],"kd":"","advanced":{}}&db=${countryCode}&q=${processedUrl}&searchType=domain&processingUrl=${urlIndex}`;
-      // const targetUrl = `${randomDomain}/analytics/overview/?q=${processedUrl}&protocol=https&searchType=domain&processingUrl=${urlIndex}`;
+      // const nargetUrl = `${randomDomain}/analytics/organic/positions/?filter={"search":"","volume":"","positions":"","positionsType":"all","serpFeatures":null,"intent":["commercial","transactional"],"kd":"","advanced":{}}&db=${countryCode}&q=${processedUrl}&searchType=domain&processingUrl=${urlIndex}`;
+      // const targetUrl = `${randomDomain}analytics/organic/positions/?filter={"search":"","volume":"","positions":"","positionsType":"all","serpFeatures":null,"intent":["commercial","transactional"],"kd":"","advanced":{}}&db=${countryCode}&q=${processedUrl}&searchType=domain&processingUrl=${urlIndex}`;
+      const targetUrl = `${randomDomain}/analytics/overview/?db=${countryCode}&q=${processedUrl}&protocol=https&searchType=domain&processingUrl=${urlIndex}`;
       console.log("🔗 Opening URL:", targetUrl);
 
       try {
