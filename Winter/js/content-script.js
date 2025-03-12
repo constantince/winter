@@ -19,8 +19,7 @@ function initializeScript() {
 
   const entryUrlPattern = /^https:\/\/www\.semrush\.fun\/home$/;
 
-  const overviewUrlPattern =
-    /^.*\/analytics\/overview\/\?q=.*&protocol=https/;
+  const overviewUrlPattern = /^.*\/analytics\/overview\/\?q=.*&protocol=https/;
 
   const positionsUrlPattern =
     /^https:\/\/.*\/analytics\/organic\/positions\/\?filter=.*&db=.*&q=.*&searchType=domain&processingUrl=.*$/;
@@ -33,7 +32,6 @@ function initializeScript() {
   if (overviewUrlPattern.test(currentPageUrl)) {
     // 域名概览
     getOverviewData();
-
   } else if (positionsUrlPattern.test(currentPageUrl)) {
     if (processingUrl === null)
       return console.log("SEMRUSH: 📄 No processingUrl");
@@ -50,24 +48,6 @@ function initializeScript() {
     // 进入初始化projects界面
     console.log("SEMRUSH: ready to start");
     searchInput();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     // 初始化菜单链接
     // initMenu();
@@ -160,22 +140,22 @@ function collectionUrls() {
 
 function initMenu() {
   console.log("SEMRUSH: 开始初始化菜单");
-  
+
   // 直接使用固定的URL值
   const fixedUrl = "https://zh.trends.fast.wmxpro.com/";
-  
+
   // 设置为数组，保持与原逻辑兼容
   const urlsArray = [fixedUrl];
-  
+
   // 直接存储到缓存
   chrome.storage.local.set(
     {
       semrushEntryUrls: urlsArray,
-      usingDomain: fixedUrl
+      usingDomain: fixedUrl,
     },
     function () {
       console.log("SEMRUSH: 💾 Fixed URL saved to cache:", fixedUrl);
-      
+
       // 发送消息通知 URLs 已保存
       chrome.runtime.sendMessage({
         action: "ENTRY_URLS_SAVED",
@@ -862,8 +842,10 @@ function stepTwoGetDom() {
               // 如果找不到现有数据，创建新的数据条目
               if (currentDataIndex === -1) {
                 const currentUrl = extractedUrls[Number(processingUrl)]?.url;
-                const currentCountry = extractedUrls[Number(processingUrl)]?.country;
-                const originalCountry = extractedUrls[Number(processingUrl)]?.enCountry;
+                const currentCountry =
+                  extractedUrls[Number(processingUrl)]?.country;
+                const originalCountry =
+                  extractedUrls[Number(processingUrl)]?.enCountry;
                 if (!currentUrl) {
                   console.error(
                     "SEMRUSH: ❌ No URL found for index:",
@@ -895,18 +877,28 @@ function stepTwoGetDom() {
                   );
 
                   // 更新 extractedUrls 中对应 URL 的状态
-                  chrome.storage.local.get(['extractedUrls'], function(result) {
-                    const extractedUrls = result.extractedUrls || [];
-                    const updatedExtractedUrls = [...extractedUrls];
-                    if (updatedExtractedUrls[Number(processingUrl)]) {
-                      updatedExtractedUrls[Number(processingUrl)].status = 'processed';
-                      
-                      // 保存更新后的 extractedUrls
-                      chrome.storage.local.set({ extractedUrls: updatedExtractedUrls }, function() {
-                        console.log("SEMRUSH: 💾 Updated URL status to processed for index:", processingUrl);
-                      });
+                  chrome.storage.local.get(
+                    ["extractedUrls"],
+                    function (result) {
+                      const extractedUrls = result.extractedUrls || [];
+                      const updatedExtractedUrls = [...extractedUrls];
+                      if (updatedExtractedUrls[Number(processingUrl)]) {
+                        updatedExtractedUrls[Number(processingUrl)].status =
+                          "processed";
+
+                        // 保存更新后的 extractedUrls
+                        chrome.storage.local.set(
+                          { extractedUrls: updatedExtractedUrls },
+                          function () {
+                            console.log(
+                              "SEMRUSH: 💾 Updated URL status to processed for index:",
+                              processingUrl
+                            );
+                          }
+                        );
+                      }
                     }
-                  });
+                  );
 
                   // 获取当前数据
                   const currentData = updatedData.find(
