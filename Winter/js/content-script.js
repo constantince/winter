@@ -19,17 +19,17 @@ function initializeScript() {
 
   const entryUrlPattern = /^https:\/\/www\.semrush\.fun\/home$/;
 
-  const overviewUrlPattern = /^.*\/analytics\/overview\/\?q=.*&protocol=https/;
+  const overviewUrlPattern = /^.*\/analytics\/overview\/\?q=.*&protocol=https/; //todo
 
-  const positionsUrlPattern =
-    /^https:\/\/.*\/analytics\/organic\/positions/;
+  const positionsUrlPattern = /^https:\/\/.*\/analytics\/organic\/positions/;
 
   const lastUrlPattern =
     /^https:\/\/.*\/analytics\/overview\/\?db=.*&q=.*&protocol=https&searchType=domain&processingUrl=.*$/;
 
   const indexPagePattern = /.*\/projects\//;
-
-  if (overviewUrlPattern.test(currentPageUrl)) {
+  if (entryUrlPattern.test(currentPageUrl)) {
+    initMenu();
+  } else if (overviewUrlPattern.test(currentPageUrl)) {
     // 域名概览
     getOverviewData();
   } else if (positionsUrlPattern.test(currentPageUrl)) {
@@ -119,29 +119,27 @@ function initMenyAndJump() {
 // collection urls
 function collectionUrls() {
   console.log("SEMRUSH: 👀 Starting to listen message");
-
-  // 添加消息监听器
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log("SEMRUSH: 📨 Content script received message:", message);
-
-    if (message.action === "START_PROCESSING") {
-      console.log("SEMRUSH: 🚀 Starting URL processing in content script");
-      // 获取 usingDomain、currentUrlIndex 和 extractedUrls
-      initMenyAndJump();
-    } else {
-      console.log("SEMRUSH: ⚠️ Unknown message action:", message.action);
-    }
-  });
+  initMenyAndJump();
 }
 
 function initMenu() {
   console.log("SEMRUSH: 开始初始化菜单");
-
+  const menuElements = document.querySelectorAll("small.text-muted");
+  const menuUrls = [];
+  menuElements.forEach((element) => {
+    const url = element.textContent.trim();
+    // 需要排除https://en01.semrush.fun
+    if (url !== "https://en01.semrush.fun") {
+      menuUrls.push(url);
+    }
+  });
+  console.log("SEMRUSH: 菜单元素:", menuUrls);
   // 直接使用固定的URL值
-  const fixedUrl = "https://zh2.semrush.fun";
-
   // 设置为数组，保持与原逻辑兼容
-  const urlsArray = [fixedUrl];
+  const urlsArray = menuUrls;
+  // 使用随机一条作为固定URL
+
+  const fixedUrl = urlsArray[Math.floor(Math.random() * urlsArray.length)];
 
   // 直接存储到缓存
   chrome.storage.local.set(
@@ -319,7 +317,7 @@ function getDoms01(callback) {
         transactionIntent,
         naturalSearchKeywords,
         brandRatio,
-        nonBrandRatio
+        nonBrandRatio,
       });
     }
   });

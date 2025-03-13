@@ -8,7 +8,11 @@ document.addEventListener("DOMContentLoaded", function () {
   // 首先检查当前标签页是否在允许的域名下
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     const currentUrl = tabs[0].url;
-    const allowedDomains = ["www.semrush.fun", ".semrush.fun", "zh.trends.fast.wmxpro.com"];
+    const allowedDomains = [
+      "www.semrush.fun",
+      ".semrush.fun",
+      "zh.trends.fast.wmxpro.com",
+    ];
 
     const isAllowedDomain = allowedDomains.some((domain) =>
       currentUrl.includes(domain)
@@ -33,7 +37,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // 原有的初始化代码
     initializeExtension();
-    
+
     // 添加消息监听器，用于接收来自background.js和content-script.js的消息
     setupMessageListeners();
   });
@@ -71,14 +75,14 @@ function initializeExtension() {
 function setupMessageListeners() {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log("📨 Popup received message:", message);
-    
+
     // 根据不同的消息类型更新界面
     switch (message.action) {
       case "PROGRESS_UPDATE":
         // 处理进度更新消息
         updateProcessingStatus(message.data);
         break;
-        
+
       case "PROCESSING_COMPLETE":
         // 处理完成消息
         if (message.data && message.data.finalData) {
@@ -88,24 +92,24 @@ function setupMessageListeners() {
           checkCacheStatusAndUpdateUI();
         }
         break;
-        
+
       case "CONTENT_SCRIPT_ERROR":
         // 处理错误消息
         handleProcessingError(message.error);
         break;
-        
+
       case "CONTENT_SCRIPT_READY":
       case "ENTRY_URLS_SAVED":
         // 这些消息可能表示状态已更改，重新检查缓存
         checkCacheStatusAndUpdateUI();
         break;
-        
+
       default:
         // 对于其他消息，也重新检查缓存状态
         checkCacheStatusAndUpdateUI();
         break;
     }
-    
+
     // 返回true表示异步处理消息
     return true;
   });
@@ -114,7 +118,7 @@ function setupMessageListeners() {
 // 检查缓存状态并更新界面
 function checkCacheStatusAndUpdateUI() {
   console.log("🔍 Checking cache status and updating UI");
-  
+
   chrome.storage.local.get(
     [
       "processingStatus",
@@ -122,7 +126,7 @@ function checkCacheStatusAndUpdateUI() {
       "extractedUrls",
       "processedData",
       "currentProcessingState",
-      "processingTableData"
+      "processingTableData",
     ],
     function (result) {
       const {
@@ -131,7 +135,7 @@ function checkCacheStatusAndUpdateUI() {
         extractedUrls = [],
         processedData = [],
         currentProcessingState,
-        processingTableData = {}
+        processingTableData = {},
       } = result;
 
       console.log("💾 Cache status:", {
@@ -144,30 +148,36 @@ function checkCacheStatusAndUpdateUI() {
       });
 
       // 检查是否所有URL都已处理完成
-      const allProcessed = extractedUrls.length > 0 && 
-                          extractedUrls.every(url => url.status === "processed");
-      
+      const allProcessed =
+        extractedUrls.length > 0 &&
+        extractedUrls.every((url) => url.status === "processed");
+
       // 检查是否有正在处理中的URL
-      const hasProcessingUrls = extractedUrls.some(url => url.status === "processing");
-      
+      const hasProcessingUrls = extractedUrls.some(
+        (url) => url.status === "processing"
+      );
+
       // 检查processingTableData是否为空
-      const hasProcessingTableData = Object.keys(processingTableData).length > 0;
+      const hasProcessingTableData =
+        Object.keys(processingTableData).length > 0;
 
       console.log("处理状态检查:", {
         allProcessed,
         hasProcessingUrls,
         extractedUrlsLength: extractedUrls.length,
-        processedDataLength: processedData.length
+        processedDataLength: processedData.length,
       });
 
       // 根据不同状态更新界面
       if (allProcessed && extractedUrls.length > 0) {
         // 所有URL都已处理完成
         console.log("✅ All URLs processed, showing completion status");
-        
+
         // 如果processedData为空但所有URL都已处理，则使用extractedUrls作为processedData
         if (processedData.length === 0) {
-          console.log("⚠️ processedData is empty, using extractedUrls as processed data");
+          console.log(
+            "⚠️ processedData is empty, using extractedUrls as processed data"
+          );
           showCompletionStatus(extractedUrls);
         } else {
           showCompletionStatus(processedData);
@@ -205,15 +215,15 @@ function showReadyToProcess(urlCount) {
 
   if (!resultElement || !statusElement) {
     console.error("❌ Required UI elements not found");
-        return;
-      }
+    return;
+  }
 
   // 清空结果区域，不显示URL列表
   resultElement.innerHTML = "";
-  
+
   // 显示状态信息
   showStatus(`已提取 ${urlCount} 条数据`, "success");
-  
+
   // 不再自动开始处理
   // startProcessing();
 }
@@ -235,10 +245,10 @@ async function startProcessing() {
   // 发送开始处理消息到background script
   chrome.runtime.sendMessage({
     action: "START_BATCH_PROCESSING",
-        data: {
+    data: {
       message: "开始批量处理URLs",
-        },
-      });
+    },
+  });
 
   // 更新界面状态
   showStatus("正在处理中...", "processing");
@@ -252,19 +262,38 @@ function showProcessingStatus(currentIndex, entries) {
   }
 
   if (currentIndex >= entries.length) {
-    console.error("❌ Current index out of bounds:", currentIndex, "entries length:", entries.length);
+    console.error(
+      "❌ Current index out of bounds:",
+      currentIndex,
+      "entries length:",
+      entries.length
+    );
     currentIndex = 0; // 重置为0以防止错误
   }
 
   const currentEntry = entries[currentIndex];
-  console.log("显示处理状态:", currentIndex + 1, "/", entries.length, "当前URL:", currentEntry.url);
+  console.log(
+    "显示处理状态:",
+    currentIndex + 1,
+    "/",
+    entries.length,
+    "当前URL:",
+    currentEntry.url
+  );
 
   // 从缓存中获取已处理的URL数量
-  chrome.storage.local.get(["extractedUrls"], function(result) {
+  chrome.storage.local.get(["extractedUrls"], function (result) {
     const extractedUrls = result.extractedUrls || [];
-    const processedCount = extractedUrls.filter(url => url.status === "processed").length;
-    
-    console.log("已处理URL数量:", processedCount, "总URL数量:", extractedUrls.length);
+    const processedCount = extractedUrls.filter(
+      (url) => url.status === "processed"
+    ).length;
+
+    console.log(
+      "已处理URL数量:",
+      processedCount,
+      "总URL数量:",
+      extractedUrls.length
+    );
 
     // 隐藏特定UI元素
     hideUIElements();
@@ -274,26 +303,38 @@ function showProcessingStatus(currentIndex, entries) {
       <div class="processing-status">
         <div class="spinner"></div>
         <div class="status-text">
-          <div class="progress-info">正在处理 ${currentIndex + 1}/${entries.length}</div>
+          <div class="progress-info">正在处理 ${currentIndex + 1}/${
+      entries.length
+    }</div>
           <div class="processed-count">已处理: ${processedCount} 条数据</div>
           <div class="current-url">当前URL: ${currentEntry.url}</div>
-          <div class="current-country">国家: ${currentEntry.country || '未知'}</div>
-          ${processedCount > 0 ? `
+          <div class="current-country">国家: ${
+            currentEntry.country || "未知"
+          }</div>
+          ${
+            processedCount > 0
+              ? `
           <div class="download-section">
             <button id="downloadCurrentBtn" class="button-small">下载已处理数据</button>
-          </div>` : ''}
+          </div>`
+              : ""
+          }
         </div>
       </div>
     `;
 
     // 如果有已处理的数据，添加下载按钮事件
     if (processedCount > 0) {
-      document.getElementById("downloadCurrentBtn").addEventListener("click", function() {
-        // 获取已处理的URL
-        const processedUrls = extractedUrls.filter(url => url.status === "processed");
-        // 下载已处理的数据
-        downloadProcessingData(processedUrls);
-      });
+      document
+        .getElementById("downloadCurrentBtn")
+        .addEventListener("click", function () {
+          // 获取已处理的URL
+          const processedUrls = extractedUrls.filter(
+            (url) => url.status === "processed"
+          );
+          // 下载已处理的数据
+          downloadProcessingData(processedUrls);
+        });
     }
   });
 }
@@ -352,9 +393,9 @@ async function handleFileUpload(event) {
   const file = event.target.files[0];
   if (!file) {
     console.log("❌ No file selected");
-      showStatus("请选择Excel文件", "error");
-      return;
-    }
+    showStatus("请选择Excel文件", "error");
+    return;
+  }
 
   // 检查文件类型
   console.log("📁 File type:", file.type, "File name:", file.name);
@@ -371,10 +412,10 @@ async function handleFileUpload(event) {
     !file.name.endsWith(".csv")
   ) {
     showStatus("请上传有效的Excel文件（.xlsx, .xls）或CSV文件", "error");
-      return;
-    }
+    return;
+  }
 
-    try {
+  try {
     showStatus("正在处理Excel文件...", "processing");
 
     // 清除之前的数据
@@ -396,7 +437,7 @@ async function handleFileUpload(event) {
     const entries = await extractUrlsFromExcel(file, columnNames);
 
     if (entries.length === 0) {
-        showStatus("未找到URL", "warning");
+      showStatus("未找到URL", "warning");
       resultElement.innerHTML = `
           <div class="error-message">
             <p>在指定列中没有找到任何URL。请检查：</p>
@@ -408,11 +449,11 @@ async function handleFileUpload(event) {
               <li>URL单元格是否为空</li>
             </ul>
           </div>`;
-      } else {
+    } else {
       // 显示结果并保存数据
       displayResults(entries);
-      }
-    } catch (error) {
+    }
+  } catch (error) {
     console.error("❌ Error processing file:", error);
     showStatus(error.message, "error");
     resultElement.innerHTML = `
@@ -425,7 +466,7 @@ async function handleFileUpload(event) {
             <li>文件是否损坏</li>
           </ul>
         </div>`;
-    }
+  }
 }
 
 // 提取主域名的辅助函数
@@ -660,12 +701,14 @@ function addCompletionButtonListeners(processedData) {
   // 添加下载按钮点击事件
   document.getElementById("downloadBtn").addEventListener("click", function () {
     // 检查数据是否来自extractedUrls
-    const isExtractedUrlsData = processedData.length > 0 && processedData[0].hasOwnProperty('status');
-    
+    const isExtractedUrlsData =
+      processedData.length > 0 && processedData[0].hasOwnProperty("status");
+
     // 如果是extractedUrls数据，则需要获取完整的处理数据
     if (isExtractedUrlsData) {
-      chrome.storage.local.get(["processedData"], function(result) {
+      chrome.storage.local.get(["processedData"], function (result) {
         const fullProcessedData = result.processedData || [];
+
         if (fullProcessedData.length > 0) {
           // 如果有完整的处理数据，则使用它
           console.log("使用完整的处理数据下载:", fullProcessedData.length);
@@ -732,8 +775,9 @@ function addCompletionButtonListeners(processedData) {
 
 // 下载完整处理数据
 function downloadProcessedData(processedData) {
+  const processedDataOne = Object.values(processedData) || [];
   // 转换数据为表格格式
-  const excelData = processedData.map((item) => {
+  const excelData = processedDataOne.map((item) => {
     // 处理商务和交易关键词数据
     const commercialKeywords = item.commercialAndTransactionalKeywords || [];
     const commercialData = {
@@ -794,7 +838,7 @@ function downloadSimplifiedData(extractedUrls) {
     return {
       网址: item.url,
       国家: item.country,
-      状态: item.status
+      状态: item.status,
     };
   });
 
@@ -815,18 +859,21 @@ function downloadSimplifiedData(extractedUrls) {
 // 处理错误
 function handleProcessingError(error) {
   console.error("❌ Processing error:", error);
-  
+
   // 保存错误状态
-  chrome.storage.local.set({
-    processingStatus: "error",
-    currentProcessingState: {
-      status: "error",
-      error: error,
+  chrome.storage.local.set(
+    {
+      processingStatus: "error",
+      currentProcessingState: {
+        status: "error",
+        error: error,
+      },
     },
-  }, function() {
-    // 保存完成后重新检查缓存状态
-    checkCacheStatusAndUpdateUI();
-  });
+    function () {
+      // 保存完成后重新检查缓存状态
+      checkCacheStatusAndUpdateUI();
+    }
+  );
 
   statusElement.innerHTML = `
     <div class="error-status">
@@ -862,58 +909,71 @@ function updateProcessingStatus(data) {
   chrome.storage.local.set({ currentProcessingState: data });
 
   // 从缓存中获取已处理的URL数量
-  chrome.storage.local.get(["extractedUrls", "processedData"], function(result) {
-    const extractedUrls = result.extractedUrls || [];
-    const processedData = result.processedData || [];
-    const processedCount = extractedUrls.filter(url => url.status === "processed").length;
-    
-    console.log("已处理URL数量:", processedCount, "总URL数量:", extractedUrls.length);
+  chrome.storage.local.get(
+    ["extractedUrls", "processedData"],
+    function (result) {
+      const extractedUrls = result.extractedUrls || [];
+      const processedData = result.processedData || [];
+      const processedCount = extractedUrls.filter(
+        (url) => url.status === "processed"
+      ).length;
 
-    // 隐藏特定UI元素
-    hideUIElements();
+      console.log(
+        "已处理URL数量:",
+        processedCount,
+        "总URL数量:",
+        extractedUrls.length
+      );
 
-    // 显示处理状态
-    statusElement.innerHTML = `
+      // 隐藏特定UI元素
+      hideUIElements();
+
+      // 显示处理状态
+      statusElement.innerHTML = `
       <div class="processing-status">
         <div class="spinner"></div>
         <div class="status-text">
-          <div class="progress-info">正在处理 ${currentIndex + 1}/${totalUrls}</div>
+          <div class="progress-info">正在处理 ${
+            currentIndex + 1
+          }/${totalUrls}</div>
           <div class="processed-count">已处理: ${processedCount} 条数据</div>
-          ${status ? `<div class="stage-info">当前状态: ${status}</div>` : ''}
-          <div class="current-url">当前URL: ${currentUrl || '无'}</div>
-          ${processedCount > 0 ? `
+          ${status ? `<div class="stage-info">当前状态: ${status}</div>` : ""}
+          <div class="current-url">当前URL: ${currentUrl || "无"}</div>
+          ${
+            processedCount > 0
+              ? `
           <div class="download-section">
             <button id="downloadCurrentBtn" class="button-small">下载已处理数据</button>
-          </div>` : ''}
+          </div>`
+              : ""
+          }
         </div>
       </div>
     `;
 
-    // 如果有已处理的数据，添加下载按钮事件
-    if (processedCount > 0) {
-      document.getElementById("downloadCurrentBtn").addEventListener("click", function() {
-        // 优先使用processedData，如果为空则使用已处理的extractedUrls
-        if (processedData.length > 0) {
-          downloadProcessedData(processedData);
-        } else {
-          // 获取已处理的URL
-          const processedUrls = extractedUrls.filter(url => url.status === "processed");
-          // 下载已处理的数据
-          downloadProcessingData(processedUrls);
-        }
-      });
+      // 如果有已处理的数据，添加下载按钮事件
+      if (processedCount > 0) {
+        document
+          .getElementById("downloadCurrentBtn")
+          .addEventListener("click", function () {
+            // 优先使用processedData，如果为空则使用已处理的extractedUrls
+            if (processedData.length > 0) {
+              downloadProcessedData(processedData);
+            }
+          });
+      }
     }
-  });
+  );
 }
 
 // 下载处理中的数据
 function downloadProcessingData(processedUrls) {
   console.log("下载处理中的数据:", processedUrls.length);
-  
+
   // 从缓存中获取processedData
-  chrome.storage.local.get(["processedData"], function(result) {
-    const processedData = result.processedData || [];
-    
+  chrome.storage.local.get(["processedData"], function (result) {
+    const processedData = Object.values(result.processedData) || [];
+
     if (processedData.length > 0) {
       // 如果有processedData，使用它
       console.log("使用processedData下载:", processedData.length);

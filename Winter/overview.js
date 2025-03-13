@@ -76,9 +76,16 @@ function processSkipToContentElementInOverview(titleElement, trafficElement) {
           },
         },
         function () {
-          const databasePills = document.querySelector(
+          let databasePills = document.querySelector(
             `div[data-at='database-pills'] button[value='${country.toLowerCase()}']`
           );
+
+          if (!databasePills) {
+            databasePills = document.querySelectorAll(
+              "div[data-at='database-pills'] button"
+            )[1];
+          }
+
           if (databasePills) {
             databasePills.click();
             console.log("SEMRUSH: 📄 点击数据库按钮");
@@ -160,8 +167,6 @@ function afterClickDatabasePills() {
   observer.observe(document.body, config);
 }
 
-
-
 function collectDataFromKeywordsSection(scroller) {
   const grantFatherElement = document.querySelector(
     'section[data-at="keywords_by_intent"]'
@@ -202,14 +207,11 @@ function collectDataFromKeywordsSection(scroller) {
     const intentBadgeElement = element.querySelector(
       'div[data-at="intent-badges"]'
     );
-    const volumeElement = element.querySelector(
-      "div[data-at='value-volume']"
-    );
+    const volumeElement = element.querySelector("div[data-at='value-volume']");
 
     const keyword = keywordElement?.textContent.trim() || "Not found";
     const volume = volumeElement?.textContent.trim() || "Not found";
-    const intentBadge =
-      intentBadgeElement?.textContent.trim() || "Not found";
+    const intentBadge = intentBadgeElement?.textContent.trim() || "Not found";
 
     naturalSearchKeywords.push({ keyword, volume, intentBadge });
   });
@@ -234,52 +236,48 @@ function collectDataFromKeywordsSection(scroller) {
 
   scroller.stop();
 
- 
-
   const overviewResult = {
     businessIntent,
     transactionIntent,
     naturalSearchKeywords,
     brandRatio,
-    nonBrandRatio
-  }
+    nonBrandRatio,
+  };
 
   // 将overviewResult 存储到当前域名地缓存中
-  chrome.storage.local.get(["processingTableData", "currentUrl"], function (result) {
-    const processingTableData = result.processingTableData || {};
-    const currentUrl = result.currentUrl || "";
+  chrome.storage.local.get(
+    ["processingTableData", "currentUrl"],
+    function (result) {
+      const processingTableData = result.processingTableData || {};
+      const currentUrl = result.currentUrl || "";
 
-    const currentData = processingTableData[currentUrl];
-    chrome.storage.local.set(
-      {
-        processingTableData: {
-          ...processingTableData,
-          [`${currentUrl}`]: {
-            ...currentData,
-            ...overviewResult
+      const currentData = processingTableData[currentUrl];
+      chrome.storage.local.set(
+        {
+          processingTableData: {
+            ...processingTableData,
+            [`${currentUrl}`]: {
+              ...currentData,
+              ...overviewResult,
+            },
           },
         },
-      },
-      function () {
-        setTimeout(() => {
-          // 触发搜索按钮点击
-          const viewAllButton = document.querySelector(
-            'a[data-at="view-full-report"]'
-          );
+        function () {
+          setTimeout(() => {
+            // 触发搜索按钮点击
+            const viewAllButton = document.querySelector(
+              'a[data-at="view-full-report"]'
+            );
 
-
-          if (viewAllButton) {
-            viewAllButton.click();
-            console.log("SEMRUSH: 📄 点击查看全部报告");
-          }
-        }, 1300);
-      }
-    );
-  });
-
-
-
-
+            if (viewAllButton) {
+              viewAllButton.click();
+              console.log("SEMRUSH: 📄 点击查看全部报告");
+            }
+          }, 1300);
+        }
+      );
+    }
+  );
 }
 
 // ... existing code ...
@@ -288,10 +286,10 @@ function collectDataFromKeywordsSection(scroller) {
 function smoothScroll(options = {}) {
   // 默认配置
   const config = {
-    speed: 1.5,             // 滚动速度 (像素/帧)
-    interval: 20,           // 滚动间隔 (毫秒)
-    maxScrollTime: 60000,   // 最大滚动时间 (毫秒)，防止无限滚动
-    pauseOnUserScroll: true // 当用户手动滚动时暂停
+    speed: 1.5, // 滚动速度 (像素/帧)
+    interval: 20, // 滚动间隔 (毫秒)
+    maxScrollTime: 60000, // 最大滚动时间 (毫秒)，防止无限滚动
+    pauseOnUserScroll: true, // 当用户手动滚动时暂停
   };
 
   // 合并用户配置
@@ -299,11 +297,11 @@ function smoothScroll(options = {}) {
 
   // 滚动状态
   const scrollState = {
-    isScrolling: false,     // 是否正在滚动
-    scrollTimerId: null,    // 计时器ID
-    startTime: 0,           // 开始时间
-    lastScrollTop: 0,       // 上次滚动位置
-    totalScrolled: 0        // 已滚动总距离
+    isScrolling: false, // 是否正在滚动
+    scrollTimerId: null, // 计时器ID
+    startTime: 0, // 开始时间
+    lastScrollTop: 0, // 上次滚动位置
+    totalScrolled: 0, // 已滚动总距离
   };
 
   // 开始滚动
@@ -321,15 +319,19 @@ function smoothScroll(options = {}) {
 
     // 监听用户滚动
     if (config.pauseOnUserScroll) {
-      window.addEventListener('wheel', handleUserScroll);
-      window.addEventListener('touchmove', handleUserScroll);
+      window.addEventListener("wheel", handleUserScroll);
+      window.addEventListener("touchmove", handleUserScroll);
     }
 
     // 设置最大滚动时间
     setTimeout(() => {
       if (scrollState.isScrolling) {
         stopScrolling();
-        console.log(`SEMRUSH: ⏱️ 滚动已达到最大时间限制 (${config.maxScrollTime / 1000}秒)`);
+        console.log(
+          `SEMRUSH: ⏱️ 滚动已达到最大时间限制 (${
+            config.maxScrollTime / 1000
+          }秒)`
+        );
       }
     }, config.maxScrollTime);
   }
@@ -338,7 +340,11 @@ function smoothScroll(options = {}) {
   function stopScrolling() {
     if (!scrollState.isScrolling) return;
 
-    console.log(`SEMRUSH: 🛑 停止滚动，总共滚动了 ${scrollState.totalScrolled.toFixed(0)} 像素`);
+    console.log(
+      `SEMRUSH: 🛑 停止滚动，总共滚动了 ${scrollState.totalScrolled.toFixed(
+        0
+      )} 像素`
+    );
     scrollState.isScrolling = false;
 
     // 清除定时器
@@ -346,8 +352,8 @@ function smoothScroll(options = {}) {
 
     // 移除事件监听器
     if (config.pauseOnUserScroll) {
-      window.removeEventListener('wheel', handleUserScroll);
-      window.removeEventListener('touchmove', handleUserScroll);
+      window.removeEventListener("wheel", handleUserScroll);
+      window.removeEventListener("touchmove", handleUserScroll);
     }
   }
 
@@ -376,19 +382,27 @@ function smoothScroll(options = {}) {
     // 执行滚动
     window.scrollBy({
       top: scrollDistance,
-      behavior: 'auto' // 使用'auto'而不是'smooth'以避免滚动叠加
+      behavior: "auto", // 使用'auto'而不是'smooth'以避免滚动叠加
     });
 
     // 更新状态
     scrollState.totalScrolled += scrollDistance;
 
     // 每滚动100像素记录一次日志
-    if (Math.floor(scrollState.totalScrolled / 100) > Math.floor((scrollState.totalScrolled - scrollDistance) / 100)) {
-      console.log(`SEMRUSH: 📜 已滚动 ${scrollState.totalScrolled.toFixed(0)} 像素`);
+    if (
+      Math.floor(scrollState.totalScrolled / 100) >
+      Math.floor((scrollState.totalScrolled - scrollDistance) / 100)
+    ) {
+      console.log(
+        `SEMRUSH: 📜 已滚动 ${scrollState.totalScrolled.toFixed(0)} 像素`
+      );
     }
 
     // 检查用户是否手动滚动了页面
-    if (config.pauseOnUserScroll && window.scrollY !== scrollState.lastScrollTop + scrollDistance) {
+    if (
+      config.pauseOnUserScroll &&
+      window.scrollY !== scrollState.lastScrollTop + scrollDistance
+    ) {
       console.log("SEMRUSH: 👆 检测到用户滚动，暂停自动滚动");
       stopScrolling();
       return;
@@ -411,7 +425,7 @@ function smoothScroll(options = {}) {
     start: startScrolling,
     stop: stopScrolling,
     isScrolling: () => scrollState.isScrolling,
-    getScrolled: () => scrollState.totalScrolled
+    getScrolled: () => scrollState.totalScrolled,
   };
 }
 
@@ -419,7 +433,7 @@ function smoothScroll(options = {}) {
 function scrollingToBottom() {
   const scroller = smoothScroll({
     speed: 220, // 每次滚动2像素
-    interval: 1000 // 每30毫秒滚动一次
+    interval: 1000, // 每30毫秒滚动一次
   });
 
   console.log("SEMRUSH: 🔄 开始向下滚动页面");

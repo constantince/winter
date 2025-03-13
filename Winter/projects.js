@@ -39,10 +39,12 @@ function searchInput() {
   };
 
   // 开始观察
-  observer.observe(document.body, config);
-  console.log(
-    "SEMRUSH: 🔄 Started observing DOM for srf-skip-to-content element"
-  );
+  setTimeout(() => {
+    observer.observe(document.body, config);
+    console.log(
+      "SEMRUSH: 🔄 Started observing DOM for srf-skip-to-content element"
+    );
+  }, 1000);
 }
 
 // 处理找到的元素
@@ -62,14 +64,15 @@ function processSkipToContentElement(searchInput, searchButton) {
 
         if (extractedUrls.length > 0) {
           // 获取第一个 status 为 unprocessed 的  URL
-          const firstUrl = extractedUrls.find(
-            (url) => url.status === "unprocessed"
-          ).url;
+          const firstUrlObj = extractedUrls.find(
+            (url) => url.status !== "processed"
+          );
           console.log("SEMRUSH: 🔗 First URL from cache:", firstUrl);
           if (!firstUrl) {
             console.log("SEMRUSH: ✅  congrats! all urls are processed");
             return;
           }
+          const firstUrl = firstUrlObj.url;
           // 填充到搜索输入框
           searchInput.value = firstUrl;
           // 触发 input 事件，确保值变化被检测到
@@ -101,31 +104,6 @@ function processSkipToContentElement(searchInput, searchButton) {
         } else {
           console.log("SEMRUSH: ⚠️ No URLs found in extractedUrls cache");
         }
-
-        // 设置固定的URL和必要的缓存
-        const fixedUrl = "https://zh2.semrush.fun";
-        const urlsArray = [fixedUrl];
-
-        // 存储到缓存
-        chrome.storage.local.set(
-          {
-            semrushEntryUrls: urlsArray,
-            usingDomain: fixedUrl,
-          },
-          function () {
-            console.log("SEMRUSH: 💾 Fixed URL saved to cache:", fixedUrl);
-
-            // 发送消息通知 URLs 已保存
-            chrome.runtime.sendMessage({
-              action: "ENTRY_URLS_SAVED",
-              data: {
-                urls: urlsArray,
-                count: urlsArray.length,
-                usingDomain: fixedUrl,
-              },
-            });
-          }
-        );
       }
     );
   } else {
