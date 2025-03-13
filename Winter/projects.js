@@ -66,12 +66,15 @@ function processSkipToContentElement(searchInput, searchButton) {
             (url) => url.status === "unprocessed"
           ).url;
           console.log("SEMRUSH: 🔗 First URL from cache:", firstUrl);
-
+          if (!firstUrl) {
+            console.log("SEMRUSH: ✅  congrats! all urls are processed");
+            return;
+          }
           // 填充到搜索输入框
           searchInput.value = firstUrl;
           // 触发 input 事件，确保值变化被检测到
           searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-          console.log("SEMRUSH: ✅ Filled search input with URL:", firstUrl);
+          console.log("SEMRUSH: 🔗 Filled search input with URL:", firstUrl);
 
           //更新缓存
           chrome.storage.local.set(
@@ -100,7 +103,7 @@ function processSkipToContentElement(searchInput, searchButton) {
         }
 
         // 设置固定的URL和必要的缓存
-        const fixedUrl = "https://zh.trends.fast.wmxpro.com/";
+        const fixedUrl = "https://zh2.semrush.fun";
         const urlsArray = [fixedUrl];
 
         // 存储到缓存
@@ -129,7 +132,7 @@ function processSkipToContentElement(searchInput, searchButton) {
     console.log("SEMRUSH: ⚠️ Search input element not found");
 
     // 如果找不到搜索输入框，仍然设置缓存
-    const fixedUrl = "https://zh.trends.fast.wmxpro.com/";
+    const fixedUrl = "https://zh2.semrush.fun";
     const urlsArray = [fixedUrl];
 
     chrome.storage.local.set(

@@ -22,7 +22,7 @@ function initializeScript() {
   const overviewUrlPattern = /^.*\/analytics\/overview\/\?q=.*&protocol=https/;
 
   const positionsUrlPattern =
-    /^https:\/\/.*\/analytics\/organic\/positions\/\?filter=.*&db=.*&q=.*&searchType=domain&processingUrl=.*$/;
+    /^https:\/\/.*\/analytics\/organic\/positions/;
 
   const lastUrlPattern =
     /^https:\/\/.*\/analytics\/overview\/\?db=.*&q=.*&protocol=https&searchType=domain&processingUrl=.*$/;
@@ -33,11 +33,7 @@ function initializeScript() {
     // 域名概览
     getOverviewData();
   } else if (positionsUrlPattern.test(currentPageUrl)) {
-    if (processingUrl === null)
-      return console.log("SEMRUSH: 📄 No processingUrl");
-    console.log("SEMRUSH: ✅ Matched positions URL pattern");
-    // 执行第二步
-    stepTwoGetDom();
+    getIntentData();
   } else if (lastUrlPattern.test(currentPageUrl)) {
     if (processingUrl === null)
       return console.log("SEMRUSH: 📄 No processingUrl");
@@ -142,7 +138,7 @@ function initMenu() {
   console.log("SEMRUSH: 开始初始化菜单");
 
   // 直接使用固定的URL值
-  const fixedUrl = "https://zh.trends.fast.wmxpro.com/";
+  const fixedUrl = "https://zh2.semrush.fun";
 
   // 设置为数组，保持与原逻辑兼容
   const urlsArray = [fixedUrl];
@@ -323,8 +319,7 @@ function getDoms01(callback) {
         transactionIntent,
         naturalSearchKeywords,
         brandRatio,
-        nonBrandRatio,
-        trafficValue,
+        nonBrandRatio
       });
     }
   });
