@@ -67,9 +67,12 @@ function processSkipToContentElement(searchInput, searchButton) {
           const firstUrlObj = extractedUrls.find(
             (url) => url.status !== "processed"
           );
-          console.log("SEMRUSH: 🔗 First URL from cache:", firstUrl);
-          if (!firstUrl) {
-            console.log("SEMRUSH: ✅  congrats! all urls are processed");
+          console.log("SEMRUSH: 🔗 First URL from cache:", firstUrlObj);
+          if (!firstUrlObj) {
+            // 设置缓存状态为done
+            chrome.storage.local.set({ processingStatus: "done" }, function() {
+              console.log("SEMRUSH: ✅  congrats! all urls are processed");
+            });
             return;
           }
           const firstUrl = firstUrlObj.url;

@@ -35,7 +35,7 @@
   "content_scripts": [
     {
       "matches": ["*://*.semrush.fun/*", "*://*.wmxpro.com/*"],
-      "js": ["js/xlsx.js", "projects.js", "overview.js",  "intent.js",  "js/countryMapping.js", "js/content-script.js"],
+      "js": ["xlsx.js", "projects.js", "overview.js",  "intent.js",  "countryMapping.js", "entry.js"],
       "run_at": "document_start"
     }
   ],
