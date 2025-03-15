@@ -62,14 +62,29 @@ function startToSelectOptions() {
 }
 
 function startGetDom() {
+  const timeoutId = setTimeout(() => {
+    saveDataToStorage([]);
+  }, 1 * 60 * 1000);
+
   var observer = new MutationObserver(function (mutations) {
     // 检查是否存在目标元素集合
     const fatherElements = document.querySelectorAll(
       "h3.___SRow_a2h7d-red-team"
     );
 
+    const nodataElement = document.querySelector(
+      "div[data-at='no-data-filters']"
+    );
+
+    // 无数据
+    if (nodataElement) {
+      observer.disconnect();
+      saveDataToStorage([]);
+    }
+
     if (fatherElements && fatherElements.length > 0) {
       console.log("SEMRUSH: 🎯 Found target elements:", fatherElements.length);
+      clearTimeout(timeoutId);
       observer.disconnect();
       // 添加200ms延迟
       setTimeout(() => {
@@ -148,10 +163,10 @@ function startGetDom() {
 function saveDataToStorage(data) {
   // 将overviewResult 存储到当前域名地缓存中
   chrome.storage.local.get(
-    ["processingTableData", "currentUrl", "extractedUrls", "usingDomain"],
+    ["processingTableData", "extractedUrls", "usingDomain"],
     function (result) {
       const processingTableData = result.processingTableData || {};
-      const currentUrl = result.currentUrl || "";
+      const currentUrl = findCurrentUrl();
       const extractedUrls = result.extractedUrls || [];
       const usingDomain = result.usingDomain || "";
 

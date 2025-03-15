@@ -4,10 +4,8 @@ function searchInput() {
   // 设置超时定时器
   const timeoutId = setTimeout(() => {
     console.log("SEMRUSH: ⚠️ Timeout reached waiting for srf-skip-to-content");
-    if (observer) {
-      observer.disconnect();
-    }
-  }, OBSERVER_TIMEOUT);
+    window.location.reload();
+  }, 60 * 1000);
 
   // 创建观察者
   const observer = new MutationObserver((mutations) => {
@@ -18,8 +16,9 @@ function searchInput() {
     const searchButton = document.querySelector(
       'button[data-test="searchbar_search_submit"]'
     );
+    const checkUI = document.querySelector("div[data-ui-name='Card.Body']");
     // 检查元素是否已渲染
-    if (targetElement && searchInput && searchButton) {
+    if (targetElement && searchInput && searchButton && checkUI) {
       // 清除超时定时器
       clearTimeout(timeoutId);
       // 处理找到的元素
@@ -64,18 +63,27 @@ function processSkipToContentElement(searchInput, searchButton) {
 
         if (extractedUrls.length > 0) {
           // 获取第一个 status 为 unprocessed 的  URL
-          const firstUrlObj = extractedUrls.find(
-            (url) => url.status !== "processed"
+          let firstUrlObj = extractedUrls.find(
+            (url) => url.status === "unprocessed"
           );
           console.log("SEMRUSH: 🔗 First URL from cache:", firstUrlObj);
           if (!firstUrlObj) {
-            // 设置缓存状态为done
-            chrome.storage.local.set({ processingStatus: "done" }, function() {
-              console.log("SEMRUSH: ✅  congrats! all urls are processed");
-            });
-            return;
+            // 取状态为processing的url
+            firstUrlObj = extractedUrls.find(
+              (url) => url.status === "processing"
+            );
+            if (!firstUrlObj) {
+              // 设置缓存状态为done
+              chrome.storage.local.set(
+                { processingStatus: "done" },
+                function () {
+                  console.log("SEMRUSH: ✅  congrats! all urls are processed");
+                }
+              );
+              return;
+            }
           }
-          const firstUrl = firstUrlObj.url;
+          const firstUrl = handleUrl(firstUrlObj.url);
           // 填充到搜索输入框
           searchInput.value = firstUrl;
           // 触发 input 事件，确保值变化被检测到
@@ -88,7 +96,8 @@ function processSkipToContentElement(searchInput, searchButton) {
               extractedUrls: extractedUrls.map((url) =>
                 url.url === firstUrl ? { ...url, status: "processing" } : url
               ),
-              currentUrl: firstUrl,
+              processingStatus: "processing",
+              usingDomain: "https://" + window.location.hostname,
               processingTableData: {
                 ...result.processingTableData,
                 [`${firstUrl}`]: {
@@ -100,8 +109,10 @@ function processSkipToContentElement(searchInput, searchButton) {
               setTimeout(() => {
                 // 触发搜索按钮点击
                 searchButton.click();
-                console.log("SEMRUSH: ✅ Clicked search button");
-              }, 2300);
+                console.log(
+                  "SEMRUSH: ✅ Clicked search button, start the process"
+                );
+              }, 2000);
             }
           );
         } else {
@@ -111,29 +122,28 @@ function processSkipToContentElement(searchInput, searchButton) {
     );
   } else {
     console.log("SEMRUSH: ⚠️ Search input element not found");
-
-    // 如果找不到搜索输入框，仍然设置缓存
-    const fixedUrl = "https://zh2.semrush.fun";
-    const urlsArray = [fixedUrl];
-
-    chrome.storage.local.set(
-      {
-        semrushEntryUrls: urlsArray,
-        usingDomain: fixedUrl,
-      },
-      function () {
-        console.log("SEMRUSH: 💾 Fixed URL saved to cache:", fixedUrl);
-
-        // 发送消息通知 URLs 已保存
-        chrome.runtime.sendMessage({
-          action: "ENTRY_URLS_SAVED",
-          data: {
-            urls: urlsArray,
-            count: urlsArray.length,
-            usingDomain: fixedUrl,
-          },
-        });
-      }
-    );
+    // window.location.reload();
   }
+}
+
+function findCurrentUrl() {
+  var input = document.querySelector("input[data-test='searchbar_input']");
+  if (input) {
+    return handleUrl(input.value);
+  }
+  reStartTheProcess();
+}
+
+function reStartTheProcess() {
+  // 本条数据作为处理状态，暂时作废。等待后一并处理processing的数据
+  // 获取useingDomain
+  chrome.storage.local.get("usingDomain", function (result) {
+    const usingDomain = result.usingDomain || "";
+    window.location.href = `${usingDomain}/projects/`;
+  });
+}
+
+//处理url字符串，只留域名，不留路径
+function handleUrl(url) {
+  return url.split("/")[0];
 }

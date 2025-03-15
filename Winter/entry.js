@@ -11,23 +11,21 @@ const currentPageUrl = window.location.href;
 // 初始化内容脚本
 console.log("SEMRUSH: 🔧 Content script initialized");
 
-
 checkProcessingStatus();
 
 // 主要功能初始化函数
 function initializeScript() {
   console.log("Initializing content script");
   console.log("SEMRUSH: 📄 Checking URL pattern");
-  const overviewUrlPattern = /^.*\/analytics\/overview/;
+  const overviewUrlPattern = /overview/;
 
-  const positionsUrlPattern = /^https:\/\/.*\/analytics\/organic\/positions/;
+  const positionsUrlPattern = /positions/;
 
-  const indexPagePattern = /.*\/projects\//;
-
+  const indexPagePattern = /projects/;
 
   if (overviewUrlPattern.test(currentPageUrl)) {
     // 域名概览
-    getOverviewData();
+    waitUntilElementIsVisible();
   } else if (positionsUrlPattern.test(currentPageUrl)) {
     getIntentData();
   } else if (indexPagePattern.test(currentPageUrl)) {
@@ -49,8 +47,8 @@ function sendOneHeartbeat() {
     {
       action: "HEARTBEAT",
       data: {
-        timestamp: Date.now()
-      }
+        timestamp: Date.now(),
+      },
     },
     (response) => {
       if (response && response.status === "ok") {
@@ -60,11 +58,8 @@ function sendOneHeartbeat() {
   );
 }
 
-
 // 检查缓存processingStatus 的状态
 function checkProcessingStatus() {
-
-
   const entryUrlPattern = /^https:\/\/www\.semrush\.fun\/home$/;
 
   if (entryUrlPattern.test(currentPageUrl)) {
@@ -86,11 +81,7 @@ function checkProcessingStatus() {
       }
     });
   }
-
-
 }
-
-
 
 function initMenyAndJump() {
   chrome.storage.local.get(["usingDomain", "extractedUrls"], function (result) {
@@ -130,15 +121,15 @@ function initMenyAndJump() {
     }
 
     // 向 popup 发送确认消息
-    chrome.runtime.sendMessage({
-      action: "CONTENT_SCRIPT_READY",
-      data: {
-        currentIndex: processingUrl,
-        totalUrls: extractedUrls.length,
-        currentUrl: currentEntry.url,
-        currentCountry: currentEntry.country,
-      },
-    });
+    // chrome.runtime.sendMessage({
+    //   action: "CONTENT_SCRIPT_READY",
+    //   data: {
+    //     currentIndex: processingUrl,
+    //     totalUrls: extractedUrls.length,
+    //     currentUrl: currentEntry.url,
+    //     currentCountry: currentEntry.country,
+    //   },
+    // });
   });
 }
 

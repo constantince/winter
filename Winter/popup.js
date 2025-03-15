@@ -3,39 +3,12 @@ let resultElement;
 let statusElement;
 let fileInput;
 let columnInput;
-let startCrawlButtonContainer;
 let startCrawlButton;
 
 document.addEventListener("DOMContentLoaded", function () {
   // 首先检查当前标签页是否在允许的域名下
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     const currentUrl = tabs[0].url;
-    const allowedDomains = [
-      "www.semrush.fun",
-      ".semrush.fun",
-      "zh.trends.fast.wmxpro.com",
-    ];
-
-    const isAllowedDomain = allowedDomains.some((domain) =>
-      currentUrl.includes(domain)
-    );
-
-    if (!isAllowedDomain) {
-      // 如果不在允许的域名下，显示提示信息
-      document.body.innerHTML = `
-        <div class="container">
-          <div class="header-section">
-            <div class="logo-section">
-              <span class="material-symbols-outlined">warning</span>
-              <h1>访问受限</h1>
-            </div>
-            <div class="status-message error">
-              此扩展程序仅在 semrush.fun 域名下可用
-            </div>
-          </div>
-        </div>`;
-      return;
-    }
 
     // 原有的初始化代码
     initializeExtension();
@@ -52,18 +25,13 @@ function initializeExtension() {
   resultElement = document.getElementById("result");
   statusElement = document.getElementById("status");
   fileInput = document.getElementById("excelFile");
-  columnInput = document.getElementById("columnName");
-  startCrawlButtonContainer = document.getElementById("startCrawlButtonContainer");
-  startCrawlButton = document.getElementById("startCrawlButton");
 
   // 验证必要的UI元素
-  if (!resultElement || !statusElement || !fileInput || !startCrawlButtonContainer || !startCrawlButton) {
+  if (!resultElement || !statusElement || !fileInput) {
     console.error("❌ Required UI elements not found:", {
       resultElement: !!resultElement,
       statusElement: !!statusElement,
       fileInput: !!fileInput,
-      startCrawlButtonContainer: !!startCrawlButtonContainer,
-      startCrawlButton: !!startCrawlButton
     });
     return;
   }
@@ -71,38 +39,40 @@ function initializeExtension() {
   console.log("✅ All required UI elements found");
 
   // 首先检查缓存状态
-  chrome.storage.local.get(["processingStatus", "extractedUrls"], function(result) {
-    console.log("Initial cache status:", result);
-    
-    // 确保所有UI元素默认隐藏
-    startCrawlButtonContainer.style.display = "none";
-    
-    // 只有当状态为idle且有extractedUrls时才显示开始按钮
-    if (result.processingStatus === "idle" && result.extractedUrls && result.extractedUrls.length > 0) {
-      startCrawlButtonContainer.style.display = "block";
-      showReadyToProcess(result.extractedUrls.length);
+  chrome.storage.local.get(
+    ["processingStatus", "extractedUrls"],
+    function (result) {
+      console.log("Initial cache status:", result);
+
+      // 只有当状态为idle且有extractedUrls时才显示开始按钮
+      if (
+        result.processingStatus === "idle" &&
+        result.extractedUrls &&
+        result.extractedUrls.length > 0
+      ) {
+        showReadyToProcess(result.extractedUrls.length);
+      }
     }
-  });
+  );
 
   // 添加开始爬取按钮的点击事件
   if (startCrawlButton) {
-    startCrawlButton.addEventListener("click", function() {
+    startCrawlButton.addEventListener("click", function () {
       // 设置状态为processing
-      chrome.storage.local.set({ processingStatus: "processing" }, function() {
+      chrome.storage.local.set({ processingStatus: "processing" }, function () {
         console.log("✅ Status set to processing");
         // 获取缓存usingDomain
-        chrome.storage.local.get("usingDomain", function(result) {
+        chrome.storage.local.get("usingDomain", function (result) {
           console.log("✅ usingDomain:", result.usingDomain);
           // 发送消息给background.js来打开新标签页
           chrome.runtime.sendMessage({
             action: "OPEN_AND_CLOSE_TAB",
             data: {
-              url: result.usingDomain
-            }
+              url: result.usingDomain,
+            },
           });
         });
       });
-      
     });
   }
 
@@ -213,23 +183,6 @@ function checkCacheStatusAndUpdateUI() {
         tableDataCount: tableDataCount,
       });
 
-      // 控制开始爬取按钮的显示
-      if (startCrawlButtonContainer) {
-        // 只有当状态为idle且有extractedUrls时才显示按钮
-        if (processingStatus === "idle" && extractedUrls.length > 0) {
-          console.log("显示开始爬取按钮");
-          startCrawlButtonContainer.style.display = "block";
-        } else {
-          console.log("隐藏开始爬取按钮，原因:", {
-            processingStatus,
-            hasUrls: extractedUrls.length > 0,
-            hasProcessingUrls,
-            allProcessed
-          });
-          startCrawlButtonContainer.style.display = "none";
-        }
-      }
-
       // 根据不同状态更新界面
       if (allProcessed && extractedUrls.length > 0) {
         // 所有URL都已处理完成
@@ -279,19 +232,14 @@ function showReadyToProcess(urlCount) {
 
   if (!resultElement || !statusElement) {
     console.error("❌ Required UI elements not found");
-        return;
-      }
+    return;
+  }
 
   // 清空结果区域，不显示URL列表
   resultElement.innerHTML = "";
 
   // 显示状态信息
   showStatus(`已提取 ${urlCount} 条数据`, "success");
-
-  // 显示开始爬取按钮
-  if (startCrawlButtonContainer) {
-    startCrawlButtonContainer.style.display = "block";
-  }
 
   // 不再自动开始处理
   // startProcessing();
@@ -314,10 +262,10 @@ async function startProcessing() {
   // 发送开始处理消息到background script
   chrome.runtime.sendMessage({
     action: "START_BATCH_PROCESSING",
-        data: {
+    data: {
       message: "开始批量处理URLs",
-        },
-      });
+    },
+  });
 
   // 更新界面状态
   showStatus("正在处理中...", "processing");
@@ -417,11 +365,16 @@ function showCompletionStatus(processedData) {
   let dataCount = 0;
   if (Array.isArray(processedData)) {
     dataCount = processedData.length;
-  } else if (typeof processedData === 'object' && processedData !== null) {
+  } else if (typeof processedData === "object" && processedData !== null) {
     dataCount = Object.keys(processedData).length;
   }
-  
-  console.log("显示完成状态，数据条数:", dataCount, "数据类型:", Array.isArray(processedData) ? "数组" : "对象");
+
+  console.log(
+    "显示完成状态，数据条数:",
+    dataCount,
+    "数据类型:",
+    Array.isArray(processedData) ? "数组" : "对象"
+  );
 
   // 更新整个container的内容
   const container = document.querySelector(".container");
@@ -456,7 +409,6 @@ function hideUIElements() {
   if (fileInput) fileInput.style.display = "none";
   if (columnInput) columnInput.style.display = "none";
   if (resultElement) resultElement.style.display = "none";
-  if (startCrawlButtonContainer) startCrawlButtonContainer.style.display = "none";
 
   // 仍然需要查询 header-section，因为它不是全局变量
   const headerSection = document.querySelector(".header-section");
@@ -501,7 +453,7 @@ async function handleFileUpload(event) {
       "processingStatus",
       "currentUrlIndex",
       "processingTableData",
-      "status"
+      "status",
     ]);
 
     // 自定义列名
@@ -682,8 +634,9 @@ async function extractUrlsFromExcel(file, columnNames) {
             .replace(/\/$/, "");
 
           processedDomains.set(domain, {
-            enCountry: getCountryCode(selectedEntry.country),
-            url: finalUrl,
+            enCountry:
+              getCountryCode(selectedEntry.country) || selectedEntry.country,
+            url: handleUrl(finalUrl),
             country: selectedEntry.country,
             status: "unprocessed",
           });
@@ -715,7 +668,7 @@ async function extractUrlsFromExcel(file, columnNames) {
         chrome.storage.local.set(
           {
             extractedUrls: entries,
-            processingStatus: "idle",
+            processingStatus: "processing",
           },
           function () {
             console.log("SEMRUSH: 💾 去重后的数据已保存:", entries);
@@ -746,11 +699,6 @@ function displayResults(entries) {
 
   // 不显示URL列表，直接调用showReadyToProcess
   showReadyToProcess(entries.length);
-  
-  // 显示开始爬取按钮，因为此时processingStatus是idle
-  if (startCrawlButtonContainer) {
-    startCrawlButtonContainer.style.display = "block";
-  }
 }
 
 // 显示状态信息
@@ -787,23 +735,23 @@ function addCompletionButtonListeners(processedData) {
     chrome.storage.local.get(["processingTableData"], function (result) {
       const processingTableData = result.processingTableData || {};
       const tableDataCount = Object.keys(processingTableData).length;
-      
+
       if (tableDataCount > 0) {
         // 如果有processingTableData，使用它
         console.log("使用processingTableData下载:", tableDataCount);
         downloadProcessedData(processingTableData);
       } else {
         // 如果没有processingTableData，尝试使用processedData
-        chrome.storage.local.get(["processedData"], function(innerResult) {
+        chrome.storage.local.get(["processedData"], function (innerResult) {
           const processedData = innerResult.processedData || {};
           const processedDataCount = Object.keys(processedData).length;
-          
+
           if (processedDataCount > 0) {
             console.log("使用processedData下载:", processedDataCount);
             downloadProcessedData(processedData);
           } else {
             // 如果都没有，使用extractedUrls
-            chrome.storage.local.get(["extractedUrls"], function(urlResult) {
+            chrome.storage.local.get(["extractedUrls"], function (urlResult) {
               const extractedUrls = urlResult.extractedUrls || [];
               console.log("使用extractedUrls下载:", extractedUrls.length);
               downloadSimplifiedData(extractedUrls);
@@ -847,11 +795,6 @@ function addCompletionButtonListeners(processedData) {
         completionStatus.style.display = "none";
       }
 
-      // 隐藏开始爬取按钮，因为此时processingStatus不是idle
-      if (startCrawlButtonContainer) {
-        startCrawlButtonContainer.style.display = "none";
-      }
-
       // 重置结果区域
       if (resultElement) {
         resultElement.innerHTML = "";
@@ -870,12 +813,12 @@ function addCompletionButtonListeners(processedData) {
 // 下载完整处理数据
 function downloadProcessedData(processedData) {
   // 确保processedData是对象，并转换为数组
-  const processedDataArray = Array.isArray(processedData) 
-    ? processedData 
+  const processedDataArray = Array.isArray(processedData)
+    ? processedData
     : Object.values(processedData || {});
-  
+
   console.log("准备下载数据，条目数:", processedDataArray.length);
-  
+
   // 转换数据为表格格式
   const excelData = processedDataArray.map((item) => {
     // 处理商务和交易关键词数据
@@ -982,11 +925,6 @@ function handleProcessingError(error) {
     </div>
   `;
 
-  // 隐藏开始爬取按钮
-  if (startCrawlButtonContainer) {
-    startCrawlButtonContainer.style.display = "none";
-  }
-
   // 启用文件输入
   if (fileInput) {
     fileInput.disabled = false;
@@ -1067,7 +1005,7 @@ function updateProcessingStatus(data) {
             // 优先使用processingTableData
             if (tableDataCount > 0) {
               downloadProcessedData(processingTableData);
-  } else {
+            } else {
               // 如果没有processingTableData，使用已处理的extractedUrls
               const processedUrls = extractedUrls.filter(
                 (url) => url.status === "processed"
@@ -1078,6 +1016,10 @@ function updateProcessingStatus(data) {
       }
     }
   );
+}
+
+function handleUrl(url) {
+  return url.split("/")[0];
 }
 
 // 下载处理中的数据

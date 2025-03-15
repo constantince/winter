@@ -34,7 +34,7 @@
     },
   "content_scripts": [
     {
-      "matches": ["*://*.semrush.fun/*", "*://*.wmxpro.com/*"],
+      "matches": ["<all_urls>"],
       "js": ["xlsx.js", "projects.js", "overview.js",  "intent.js",  "countryMapping.js", "entry.js"],
       "run_at": "document_start"
     }

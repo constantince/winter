@@ -12,9 +12,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.action) {
     case "OPEN_AND_CLOSE_TAB":
       // 从缓存中获取usingDomain，然后打开新标签页
-      chrome.storage.local.get(["usingDomain"], function(result) {
+      chrome.storage.local.get(["usingDomain"], function (result) {
         if (result.usingDomain) {
-          openAndStartTimer(result.usingDomain);
+          openAndStartTimer(result.usingDomain + "/projects");
         } else {
           console.error("No usingDomain found in cache");
         }
@@ -24,7 +24,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case "HEARTBEAT":
       // 处理心跳消息，重置倒计时
       if (activeTabId && tabCloseTimer) {
-        console.log("Received heartbeat, resetting timer for tab:", activeTabId);
+        console.log(
+          "Received heartbeat, resetting timer for tab:",
+          activeTabId
+        );
         resetCloseTimer(TAB_CLOSE_TIMEOUT);
         sendResponse({ status: "ok" });
       }
@@ -48,7 +51,7 @@ function openAndStartTimer(url) {
   chrome.tabs.create({ url: url, active: true }, (tab) => {
     console.log("New tab opened:", tab.id);
     activeTabId = tab.id;
-    
+
     // 设置倒计时关闭标签页
     resetCloseTimer(TAB_CLOSE_TIMEOUT);
   });
@@ -74,19 +77,27 @@ function resetCloseTimer(timeout) {
         reopenTimer = setTimeout(() => {
           console.log("Reopening tab after 2 minutes");
           // 从缓存中获取URL并重新打开
-          chrome.storage.local.get(["usingDomain", "semrushEntryUrls"], function(result) {
-            // 取usingDomain在semrushEntryUrls缓存中的下一个url 如果是最后一个，则取第一个
-            const usingDomainIndex = result.semrushEntryUrls.indexOf(result.usingDomain);
-            const nextUrl = usingDomainIndex === result.semrushEntryUrls.length - 1 ? result.semrushEntryUrls[0] :  result.semrushEntryUrls[usingDomainIndex + 1];
-            // 更新usingDomain  
-            chrome.storage.local.set({ usingDomain: nextUrl }, function() {
-              if (nextUrl) {
-                openAndStartTimer(nextUrl);
-              } else {
-                console.error("No usingDomain found in cache");
-              }
-            });
-          });
+          chrome.storage.local.get(
+            ["usingDomain", "semrushEntryUrls"],
+            function (result) {
+              // 取usingDomain在semrushEntryUrls缓存中的下一个url 如果是最后一个，则取第一个
+              const usingDomainIndex = result.semrushEntryUrls.indexOf(
+                result.usingDomain
+              );
+              const nextUrl =
+                usingDomainIndex === result.semrushEntryUrls.length - 1
+                  ? result.semrushEntryUrls[0]
+                  : result.semrushEntryUrls[usingDomainIndex + 1];
+              // 更新usingDomain
+              chrome.storage.local.set({ usingDomain: nextUrl }, function () {
+                if (nextUrl) {
+                  openAndStartTimer(nextUrl + "/projects");
+                } else {
+                  console.error("No usingDomain found in cache");
+                }
+              });
+            }
+          );
         }, REOPEN_DELAY);
       });
     }
