@@ -1,10 +1,10 @@
 function waitUntilElementIsVisible() {
-  // 设置超时定时器
-  const timeoutId = setTimeout(() => {
+  // 设置超时定时器 界面2分钟后没跑完丢弃数据
+  setTimeout(() => {
     console.log("SEMRUSH: ⚠️ Timeout reached waiting for srf-skip-to-content");
     // 丢弃无用的数据
     forceUpdateCacheStatus();
-  }, 1 * 60 * 1000);
+  }, 2 * 60 * 1000);
 
   const observer = new MutationObserver((mutations) => {
     const distributionTable = document.querySelector(
@@ -14,16 +14,27 @@ function waitUntilElementIsVisible() {
       "div[data-at='database-pills']"
     );
     if (selectDatabasePills && distributionTable) {
-      clearTimeout(timeoutId);
+      // clearTimeout(timeoutId);
       observer.disconnect();
       const titleElement = distributionTable.querySelector(
         'span[data-at="db-title"]'
       );
       if (titleElement) {
-        getTheRightCountry(titleElement.textContent.trim());
-        setTimeout(() => {
-          getOverviewData();
-        }, 1000);
+        // 从extractedUrls中找到对应的enCountry
+        chrome.storage.local.get(["extractedUrls"], function (result) {
+          const extractedUrls = result.extractedUrls || [];
+          const currentUrl = findCurrentUrl();
+          const currentData = extractedUrls.find(
+            (item) => item.url === currentUrl
+          );
+          clickTheRightCountry(
+            currentData.enCountry || titleElement.textContent.trim()
+          );
+
+          setTimeout(() => {
+            getOverviewData();
+          }, 1000);
+        });
       }
     }
   });
@@ -70,7 +81,7 @@ function getOverviewData() {
         'span[data-at="db-title"]'
       );
       const trafficElement = fatherElement.querySelector(
-        'div[data-at="table-row"] div[name="organicTraffic"]'
+        'div[data-at="table-row"] a[data-at="value-organicTraffic"'
       );
 
       if (titleElement && trafficElement) {
@@ -363,7 +374,7 @@ function scrollWithPromise(scrollAmount, intervalTime, totalDuration) {
   });
 }
 
-function getTheRightCountry(country) {
+function clickTheRightCountry(country) {
   const firstDatabasePills = document.querySelectorAll(
     "div[data-at='database-pills'] button"
   )[0];
@@ -403,39 +414,4 @@ function getTheRightCountry(country) {
   } else {
     firstDatabasePills.click();
   }
-}
-
-//强制更新缓存状态
-function forceUpdateCacheStatus() {
-  chrome.storage.local.get(
-    ["processingTableData", "extractedUrls", "usingDomain"],
-    function (result) {
-      const processingTableData = result.processingTableData || {};
-      const currentUrl = findCurrentUrl();
-      const extractedUrls = result.extractedUrls || [];
-      const usingDomain = result.usingDomain || "";
-
-      const currentData = processingTableData[currentUrl];
-      chrome.storage.local.set(
-        {
-          extractedUrls: extractedUrls.map((item) =>
-            item.url === currentUrl ? { ...item, status: "processed" } : item
-          ),
-          processingTableData: {
-            ...processingTableData,
-            [`${currentUrl}`]: {
-              ...currentData,
-              commercialIntentKeywords: [],
-              uselessData: true,
-            },
-          },
-        },
-        function () {
-          setTimeout(() => {
-            window.location.href = `${usingDomain}/projects/`;
-          }, 10 * 1000);
-        }
-      );
-    }
-  );
 }

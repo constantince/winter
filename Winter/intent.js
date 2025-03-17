@@ -1,6 +1,5 @@
 function getIntentData() {
   console.log("SEMRUSH: 📄 getIntentData");
-
   var observer = new MutationObserver(function (mutations) {
     const triggerElement = document.getElementById("igc-ui-kit-ri-trigger");
     const dataCurrentElement = document.querySelector(

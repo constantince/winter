@@ -1,11 +1,11 @@
 function searchInput() {
   console.log("SEMRUSH: 👀 Waiting for srf-skip-to-content element to render");
 
-  // 设置超时定时器
-  const timeoutId = setTimeout(() => {
+  //设置超时定时器 界面2分钟后没跑完丢弃数据
+  setTimeout(() => {
     console.log("SEMRUSH: ⚠️ Timeout reached waiting for srf-skip-to-content");
-    window.location.reload();
-  }, 60 * 1000);
+    forceUpdateCacheStatus();
+  }, 2 * 60 * 1000);
 
   // 创建观察者
   const observer = new MutationObserver((mutations) => {
@@ -20,7 +20,7 @@ function searchInput() {
     // 检查元素是否已渲染
     if (targetElement && searchInput && searchButton && checkUI) {
       // 清除超时定时器
-      clearTimeout(timeoutId);
+      // clearTimeout(timeoutId);
       // 处理找到的元素
       processSkipToContentElement(searchInput, searchButton);
 
@@ -146,4 +146,39 @@ function reStartTheProcess() {
 //处理url字符串，只留域名，不留路径
 function handleUrl(url) {
   return url.split("/")[0];
+}
+
+//强制更新缓存状态
+function forceUpdateCacheStatus() {
+  chrome.storage.local.get(
+    ["processingTableData", "extractedUrls", "usingDomain"],
+    function (result) {
+      const processingTableData = result.processingTableData || {};
+      const currentUrl = findCurrentUrl();
+      const extractedUrls = result.extractedUrls || [];
+      const usingDomain = result.usingDomain || "";
+
+      const currentData = processingTableData[currentUrl];
+      chrome.storage.local.set(
+        {
+          extractedUrls: extractedUrls.map((item) =>
+            item.url === currentUrl ? { ...item, status: "processed" } : item
+          ),
+          processingTableData: {
+            ...processingTableData,
+            [`${currentUrl}`]: {
+              ...currentData,
+              commercialIntentKeywords: [],
+              auselessData: true,
+            },
+          },
+        },
+        function () {
+          setTimeout(() => {
+            window.location.href = `${usingDomain}/projects/`;
+          }, 3 * 1000);
+        }
+      );
+    }
+  );
 }

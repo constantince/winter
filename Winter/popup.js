@@ -634,8 +634,7 @@ async function extractUrlsFromExcel(file, columnNames) {
             .replace(/\/$/, "");
 
           processedDomains.set(domain, {
-            enCountry:
-              getCountryCode(selectedEntry.country) || selectedEntry.country,
+            enCountry: getCountryCode(selectedEntry.country) || "",
             url: handleUrl(finalUrl),
             country: selectedEntry.country,
             status: "unprocessed",
@@ -732,34 +731,41 @@ function addCompletionButtonListeners(processedData) {
   // 添加下载按钮点击事件
   document.getElementById("downloadBtn").addEventListener("click", function () {
     // 从缓存中获取processingTableData
-    chrome.storage.local.get(["processingTableData"], function (result) {
-      const processingTableData = result.processingTableData || {};
-      const tableDataCount = Object.keys(processingTableData).length;
+    chrome.storage.local.get(
+      ["processingTableData", "extractedUrls"],
+      function (result) {
+        const processingTableDataOriginal = result.processingTableData || {};
+        const extractedUrls = result.extractedUrls || [];
+        const tableDataCount = Object.keys(processingTableDataOriginal).length;
+        const processingTableData = mergeArrayWithObject(
+          extractedUrls,
+          processingTableDataOriginal
+        );
+        if (tableDataCount > 0) {
+          // 如果有processingTableData，使用它
+          console.log("使用processingTableData下载:", tableDataCount);
+          downloadProcessedData(processingTableData);
+        } else {
+          // 如果没有processingTableData，尝试使用processedData
+          chrome.storage.local.get(["processedData"], function (innerResult) {
+            const processedData = innerResult.processedData || {};
+            const processedDataCount = Object.keys(processedData).length;
 
-      if (tableDataCount > 0) {
-        // 如果有processingTableData，使用它
-        console.log("使用processingTableData下载:", tableDataCount);
-        downloadProcessedData(processingTableData);
-      } else {
-        // 如果没有processingTableData，尝试使用processedData
-        chrome.storage.local.get(["processedData"], function (innerResult) {
-          const processedData = innerResult.processedData || {};
-          const processedDataCount = Object.keys(processedData).length;
-
-          if (processedDataCount > 0) {
-            console.log("使用processedData下载:", processedDataCount);
-            downloadProcessedData(processedData);
-          } else {
-            // 如果都没有，使用extractedUrls
-            chrome.storage.local.get(["extractedUrls"], function (urlResult) {
-              const extractedUrls = urlResult.extractedUrls || [];
-              console.log("使用extractedUrls下载:", extractedUrls.length);
-              downloadSimplifiedData(extractedUrls);
-            });
-          }
-        });
+            if (processedDataCount > 0) {
+              console.log("使用processedData下载:", processedDataCount);
+              downloadProcessedData(processedData);
+            } else {
+              // 如果都没有，使用extractedUrls
+              chrome.storage.local.get(["extractedUrls"], function (urlResult) {
+                const extractedUrls = urlResult.extractedUrls || [];
+                console.log("使用extractedUrls下载:", extractedUrls.length);
+                downloadSimplifiedData(extractedUrls);
+              });
+            }
+          });
+        }
       }
-    });
+    );
   });
 
   // 添加重新开始按钮点击事件
@@ -1019,7 +1025,7 @@ function updateProcessingStatus(data) {
 }
 
 function handleUrl(url) {
-  return url.split("/")[0];
+  return getMainDomain(url.split("/")[0]);
 }
 
 // 下载处理中的数据
@@ -1174,3 +1180,31 @@ style.textContent = `
   }
 `;
 document.head.appendChild(style);
+
+function mergeArrayWithObject(arr, obj) {
+  return arr.map((item) => {
+    const url = item.url;
+    if (obj[url]) {
+      return { ...item, ...obj[url] };
+    }
+    return item;
+  });
+}
+
+function getMainDomain(domain) {
+  // 检查域名是否以 .com 结尾
+  if (domain.endsWith(".com")) {
+    // 将域名按 '.' 分割成数组
+    const parts = domain.split(".");
+    // 如果域名是类似 abc.com 的形式
+    if (parts.length === 2) {
+      return domain; // 直接返回，例如 abc.com
+    }
+    // 如果域名是类似 us.abc.com 或 ca.abc.com 的形式
+    if (parts.length >= 3) {
+      return parts.slice(-2).join("."); // 返回主域名，例如 abc.com
+    }
+  }
+  // 如果不是以 .com 结尾，直接返回原域名
+  return domain;
+}

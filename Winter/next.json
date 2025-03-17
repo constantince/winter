@@ -1,0 +1,914 @@
+{
+  "boden.com": {
+    "brandRatio": "78.2%",
+    "businessIntent": "11.5%",
+    "commercialIntentKeywords": [
+      {
+        "intent": "I&T",
+        "kd": "41",
+        "keyword": "boden dresses",
+        "traffic": "11.8K",
+        "volume": "14.8K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "34",
+        "keyword": "mini boden",
+        "traffic": "7.9K",
+        "volume": "9.9K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "30",
+        "keyword": "boden dress",
+        "traffic": "2.3K",
+        "volume": "2.9K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "23",
+        "keyword": "boden bikini",
+        "traffic": "1.9K",
+        "volume": "2.4K"
+      },
+      {
+        "intent": "N&T",
+        "kd": "25",
+        "keyword": "boden shoes",
+        "traffic": "1.9K",
+        "volume": "2.4K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "47",
+        "keyword": "boden fashion",
+        "traffic": "1.5K",
+        "volume": "1.9K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "36",
+        "keyword": "boden dresses uk",
+        "traffic": "1.5K",
+        "volume": "1.9K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "33",
+        "keyword": "boden clothing dresses",
+        "traffic": "1.3K",
+        "volume": "1.6K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "24",
+        "keyword": "boden coats",
+        "traffic": "1.3K",
+        "volume": "1.6K"
+      },
+      {
+        "intent": "T",
+        "kd": "26",
+        "keyword": "boden sale dresses",
+        "traffic": "1.3K",
+        "volume": "1.6K"
+      }
+    ],
+    "country": "UK",
+    "naturalSearchKeywords": [
+      { "intentBadge": "N", "keyword": "boden", "volume": "246K" },
+      { "intentBadge": "N", "keyword": "boden uk", "volume": "74K" },
+      { "intentBadge": "IT", "keyword": "boden dresses", "volume": "14.8K" },
+      { "intentBadge": "N", "keyword": "boden sale", "volume": "14.8K" },
+      { "intentBadge": "N", "keyword": "boden returns", "volume": "12.1K" }
+    ],
+    "nonBrandRatio": "21.8%",
+    "traffic": "1.5M",
+    "transactionIntent": "31%",
+    "url": "boden.com"
+  },
+  "boody.com.au": {
+    "brandRatio": "65%",
+    "businessIntent": "33.1%",
+    "commercialIntentKeywords": [
+      {
+        "intent": "T",
+        "kd": "38",
+        "keyword": "boody underwear",
+        "traffic": "6.5K",
+        "volume": "8.1K"
+      },
+      {
+        "intent": "T",
+        "kd": "28",
+        "keyword": "boody sale",
+        "traffic": "1.5K",
+        "volume": "1.9K"
+      },
+      {
+        "intent": "C",
+        "kd": "38",
+        "keyword": "bamboo underwear",
+        "traffic": "1.1K",
+        "volume": "4.4K"
+      },
+      {
+        "intent": "C",
+        "kd": "32",
+        "keyword": "boody stockists",
+        "traffic": "800",
+        "volume": "1K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "37",
+        "keyword": "boody undies",
+        "traffic": "800",
+        "volume": "1K"
+      },
+      {
+        "intent": "C&I",
+        "kd": "23",
+        "keyword": "g string",
+        "traffic": "786",
+        "volume": "12.1K"
+      },
+      {
+        "intent": "C",
+        "kd": "56",
+        "keyword": "period underwear",
+        "traffic": "664",
+        "volume": "8.1K"
+      },
+      {
+        "intent": "N&T",
+        "kd": "29",
+        "keyword": "boody bra",
+        "traffic": "576",
+        "volume": "720"
+      },
+      {
+        "intent": "T",
+        "kd": "36",
+        "keyword": "boody bamboo underwear",
+        "traffic": "576",
+        "volume": "720"
+      },
+      {
+        "intent": "N&T",
+        "kd": "49",
+        "keyword": "b boody",
+        "traffic": "576",
+        "volume": "720"
+      }
+    ],
+    "country": "AU",
+    "naturalSearchKeywords": [
+      { "intentBadge": "N", "keyword": "boody", "volume": "33.1K" },
+      { "intentBadge": "T", "keyword": "boody underwear", "volume": "8.1K" },
+      { "intentBadge": "N", "keyword": "boody australia", "volume": "3.6K" },
+      { "intentBadge": "T", "keyword": "boody sale", "volume": "1.9K" },
+      { "intentBadge": "C", "keyword": "bamboo underwear", "volume": "4.4K" }
+    ],
+    "nonBrandRatio": "35%",
+    "traffic": "85.9K",
+    "transactionIntent": "23.9%",
+    "url": "boody.com.au"
+  },
+  "drberg.com": {
+    "brandRatio": "49.3%",
+    "businessIntent": "17%",
+    "commercialIntentKeywords": [
+      {
+        "intent": "I&T",
+        "kd": "51",
+        "keyword": "dr berg magnesium",
+        "traffic": "1K",
+        "volume": "1.3K"
+      },
+      {
+        "intent": "C",
+        "kd": "50",
+        "keyword": "dr berg vitamins",
+        "traffic": "800",
+        "volume": "1K"
+      },
+      {
+        "intent": "C&I",
+        "kd": "61",
+        "keyword": "tortilla chips",
+        "traffic": "728",
+        "volume": "33.1K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "50",
+        "keyword": "dr eric berg supplements",
+        "traffic": "719",
+        "volume": "2.9K"
+      },
+      {
+        "intent": "C",
+        "kd": "47",
+        "keyword": "dr berg virginia",
+        "traffic": "704",
+        "volume": "880"
+      },
+      {
+        "intent": "I&T",
+        "kd": "41",
+        "keyword": "dr berg shop",
+        "traffic": "704",
+        "volume": "880"
+      },
+      {
+        "intent": "C&I",
+        "kd": "29",
+        "keyword": "masago",
+        "traffic": "540",
+        "volume": "135K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "50",
+        "keyword": "doctor berg supplements",
+        "traffic": "472",
+        "volume": "590"
+      },
+      {
+        "intent": "C",
+        "kd": "52",
+        "keyword": "drberg.com",
+        "traffic": "472",
+        "volume": "590"
+      },
+      {
+        "intent": "I&T",
+        "kd": "43",
+        "keyword": "dr berg magnesium glycinate",
+        "traffic": "472",
+        "volume": "590"
+      }
+    ],
+    "country": "US",
+    "naturalSearchKeywords": [
+      { "intentBadge": "I", "keyword": "dr berg", "volume": "27.1K" },
+      {
+        "intentBadge": "I",
+        "keyword": "dr berg supplements",
+        "volume": "8.1K"
+      },
+      { "intentBadge": "I", "keyword": "dr. berg", "volume": "6.6K" },
+      { "intentBadge": "I", "keyword": "dr eric berg", "volume": "12.1K" },
+      { "intentBadge": "I", "keyword": "drberg", "volume": "2.4K" }
+    ],
+    "nonBrandRatio": "50.7%",
+    "traffic": "205.1K",
+    "transactionIntent": "5.3%",
+    "url": "drberg.com"
+  },
+  "ecco.com": {
+    "brandRatio": "89.8%",
+    "businessIntent": "15.6%",
+    "commercialIntentKeywords": [
+      {
+        "intent": "N&T",
+        "kd": "33",
+        "keyword": "ecco golf shoes",
+        "traffic": "11.8K",
+        "volume": "14.8K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "35",
+        "keyword": "ecco mens shoes",
+        "traffic": "7.9K",
+        "volume": "9.9K"
+      },
+      {
+        "intent": "N&T",
+        "kd": "39",
+        "keyword": "ecco shoes for women",
+        "traffic": "7.9K",
+        "volume": "9.9K"
+      },
+      {
+        "intent": "T",
+        "kd": "36",
+        "keyword": "ecco sandals",
+        "traffic": "6.5K",
+        "volume": "8.1K"
+      },
+      {
+        "intent": "N&T",
+        "kd": "35",
+        "keyword": "ecco shoes for men",
+        "traffic": "5.3K",
+        "volume": "6.6K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "42",
+        "keyword": "ecco womens shoes",
+        "traffic": "4.3K",
+        "volume": "5.4K"
+      },
+      {
+        "intent": "N&T",
+        "kd": "32",
+        "keyword": "ecco shoes women",
+        "traffic": "4.3K",
+        "volume": "5.4K"
+      },
+      {
+        "intent": "N&T",
+        "kd": "32",
+        "keyword": "ecco boots",
+        "traffic": "3.5K",
+        "volume": "4.4K"
+      },
+      {
+        "intent": "N&T",
+        "kd": "56",
+        "keyword": "ecco shoes near me",
+        "traffic": "3.5K",
+        "volume": "4.4K"
+      },
+      {
+        "intent": "N&T",
+        "kd": "29",
+        "keyword": "ecco golf shoes men",
+        "traffic": "2.9K",
+        "volume": "3.6K"
+      }
+    ],
+    "country": "US",
+    "naturalSearchKeywords": [
+      { "intentBadge": "N", "keyword": "ecco", "volume": "74K" },
+      { "intentBadge": "N", "keyword": "ecco shoes", "volume": "60.5K" },
+      { "intentBadge": "NT", "keyword": "ecco golf shoes", "volume": "14.8K" },
+      { "intentBadge": "IT", "keyword": "ecco mens shoes", "volume": "9.9K" },
+      {
+        "intentBadge": "NT",
+        "keyword": "ecco shoes for women",
+        "volume": "9.9K"
+      }
+    ],
+    "nonBrandRatio": "10.2%",
+    "traffic": "2.3M",
+    "transactionIntent": "38.8%",
+    "url": "ecco.com"
+  },
+  "madesa.com": {
+    "brandRatio": "16.5%",
+    "businessIntent": "5.5%",
+    "commercialIntentKeywords": [
+      {
+        "intent": "C&N",
+        "kd": "46",
+        "keyword": "madesa",
+        "traffic": "59.2K",
+        "volume": "74K"
+      },
+      {
+        "intent": "C&I",
+        "kd": "31",
+        "keyword": "armario de cozinha",
+        "traffic": "30.2K",
+        "volume": "368K"
+      },
+      {
+        "intent": "C&I",
+        "kd": "33",
+        "keyword": "cozinha",
+        "traffic": "22.4K",
+        "volume": "90.5K"
+      },
+      {
+        "intent": "C&I",
+        "kd": "22",
+        "keyword": "mesa 4 cadeiras",
+        "traffic": "7.3K",
+        "volume": "165K"
+      },
+      {
+        "intent": "C&I",
+        "kd": "22",
+        "keyword": "gabinete para banheiro",
+        "traffic": "6.1K",
+        "volume": "74K"
+      },
+      {
+        "intent": "C&I",
+        "kd": "22",
+        "keyword": "cozinha modulada",
+        "traffic": "6.1K",
+        "volume": "74K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "23",
+        "keyword": "cozinha madesa",
+        "traffic": "5.3K",
+        "volume": "6.6K"
+      },
+      {
+        "intent": "C",
+        "kd": "48",
+        "keyword": "moveis",
+        "traffic": "5K",
+        "volume": "60.5K"
+      },
+      {
+        "intent": "C&I",
+        "kd": "21",
+        "keyword": "cozinha completa",
+        "traffic": "3.3K",
+        "volume": "40.5K"
+      },
+      {
+        "intent": "C",
+        "kd": "69",
+        "keyword": "loja de moveis",
+        "traffic": "2.9K",
+        "volume": "22.2K"
+      }
+    ],
+    "country": "BR",
+    "naturalSearchKeywords": [
+      { "intentBadge": "CN", "keyword": "madesa", "volume": "74K" },
+      { "intentBadge": "N", "keyword": "madesa moveis", "volume": "49.5K" },
+      {
+        "intentBadge": "CI",
+        "keyword": "armario de cozinha",
+        "volume": "368K"
+      },
+      { "intentBadge": "CI", "keyword": "cozinha", "volume": "90.5K" },
+      { "intentBadge": "I", "keyword": "armário de cozinha", "volume": "135K" }
+    ],
+    "nonBrandRatio": "83.5%",
+    "traffic": "1.2M",
+    "transactionIntent": "7%",
+    "url": "madesa.com"
+  },
+  "maje.com": {
+    "brandRatio": "87.2%",
+    "businessIntent": "5.7%",
+    "commercialIntentKeywords": [
+      {
+        "intent": "C&N",
+        "kd": "45",
+        "keyword": "maje",
+        "traffic": "160.8K",
+        "volume": "201K"
+      },
+      {
+        "intent": "N&T",
+        "kd": "31",
+        "keyword": "sac maje",
+        "traffic": "11.8K",
+        "volume": "14.8K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "30",
+        "keyword": "maje outlet",
+        "traffic": "5.3K",
+        "volume": "6.6K"
+      },
+      {
+        "intent": "T",
+        "kd": "23",
+        "keyword": "ceinture maje",
+        "traffic": "4.3K",
+        "volume": "5.4K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "24",
+        "keyword": "sac a main maje",
+        "traffic": "2.9K",
+        "volume": "3.6K"
+      },
+      {
+        "intent": "C&N",
+        "kd": "45",
+        "keyword": "maje",
+        "traffic": "2.8K",
+        "volume": "201K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "26",
+        "keyword": "sac maje noir",
+        "traffic": "2.3K",
+        "volume": "2.9K"
+      },
+      {
+        "intent": "C&N",
+        "kd": "40",
+        "keyword": "maje paris",
+        "traffic": "2.3K",
+        "volume": "2.9K"
+      },
+      {
+        "intent": "C&N",
+        "kd": "45",
+        "keyword": "maje",
+        "traffic": "2K",
+        "volume": "201K"
+      },
+      {
+        "intent": "C&N",
+        "kd": "45",
+        "keyword": "maje",
+        "traffic": "2K",
+        "volume": "201K"
+      }
+    ],
+    "country": "FR",
+    "naturalSearchKeywords": [
+      { "intentBadge": "CN", "keyword": "maje", "volume": "201K" },
+      { "intentBadge": "NT", "keyword": "sac maje", "volume": "14.8K" },
+      { "intentBadge": "N", "keyword": "robe maje", "volume": "6.6K" },
+      { "intentBadge": "IT", "keyword": "maje outlet", "volume": "6.6K" },
+      { "intentBadge": "T", "keyword": "ceinture maje", "volume": "5.4K" }
+    ],
+    "nonBrandRatio": "12.8%",
+    "traffic": "944.2K",
+    "transactionIntent": "27.2%",
+    "url": "maje.com"
+  },
+  "moss.co.uk": {
+    "brandRatio": "47%",
+    "businessIntent": "11.4%",
+    "commercialIntentKeywords": [
+      {
+        "intent": "C&N",
+        "kd": "52",
+        "keyword": "moss",
+        "traffic": "26.5K",
+        "volume": "33.1K"
+      },
+      {
+        "intent": "C&N",
+        "kd": "57",
+        "keyword": "moss & bros",
+        "traffic": "11.8K",
+        "volume": "14.8K"
+      },
+      {
+        "intent": "N&T",
+        "kd": "42",
+        "keyword": "moss bros near me",
+        "traffic": "6.5K",
+        "volume": "8.1K"
+      },
+      {
+        "intent": "C&I",
+        "kd": "53",
+        "keyword": "mossbros",
+        "traffic": "4.3K",
+        "volume": "5.4K"
+      },
+      {
+        "intent": "C",
+        "kd": "47",
+        "keyword": "tuxedo",
+        "traffic": "3.6K",
+        "volume": "27.1K"
+      },
+      {
+        "intent": "C&N",
+        "kd": "53",
+        "keyword": "moss brothers suits",
+        "traffic": "2.3K",
+        "volume": "2.9K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "28",
+        "keyword": "double breasted suit",
+        "traffic": "2K",
+        "volume": "8.1K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "29",
+        "keyword": "moss bros oxford street west",
+        "traffic": "1.9K",
+        "volume": "2.4K"
+      },
+      {
+        "intent": "T",
+        "kd": "37",
+        "keyword": "moss bros sale",
+        "traffic": "1.9K",
+        "volume": "2.4K"
+      },
+      {
+        "intent": "T",
+        "kd": "33",
+        "keyword": "moss bros discount code",
+        "traffic": "1.5K",
+        "volume": "1.9K"
+      }
+    ],
+    "country": "UK",
+    "naturalSearchKeywords": [
+      { "intentBadge": "IN", "keyword": "moss bros", "volume": "110K" },
+      { "intentBadge": "CN", "keyword": "moss", "volume": "33.1K" },
+      { "intentBadge": "CN", "keyword": "moss & bros", "volume": "14.8K" },
+      { "intentBadge": "N", "keyword": "moss bros suits", "volume": "12.1K" },
+      { "intentBadge": "NT", "keyword": "moss bros near me", "volume": "8.1K" }
+    ],
+    "nonBrandRatio": "53%",
+    "traffic": "776.6K",
+    "transactionIntent": "29.9%",
+    "url": "moss.co.uk"
+  },
+  "oliveyoung.com": {
+    "brandRatio": "84.7%",
+    "businessIntent": "20.1%",
+    "commercialIntentKeywords": [
+      {
+        "intent": "T",
+        "kd": "26",
+        "keyword": "olive young near me",
+        "traffic": "704",
+        "volume": "880"
+      },
+      {
+        "intent": "C",
+        "kd": "29",
+        "keyword": "torriden",
+        "traffic": "541",
+        "volume": "6.6K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "29",
+        "keyword": "illiyoon ceramide ato concentrate cream",
+        "traffic": "442",
+        "volume": "5.4K"
+      },
+      {
+        "intent": "C",
+        "kd": "13",
+        "keyword": "wakemake",
+        "traffic": "322",
+        "volume": "1.3K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "23",
+        "keyword": "olive young sunscreen",
+        "traffic": "312",
+        "volume": "390"
+      },
+      {
+        "intent": "I&T",
+        "kd": "17",
+        "keyword": "olive young locations",
+        "traffic": "312",
+        "volume": "390"
+      },
+      {
+        "intent": "I&T",
+        "kd": "9",
+        "keyword": "aou lip balm",
+        "traffic": "250",
+        "volume": "1.9K"
+      },
+      {
+        "intent": "C&I",
+        "kd": "8",
+        "keyword": "unove",
+        "traffic": "248",
+        "volume": "1K"
+      },
+      {
+        "intent": "C",
+        "kd": "11",
+        "keyword": "ilso",
+        "traffic": "248",
+        "volume": "1K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "15",
+        "keyword": "korean carot face mask orange olive young",
+        "traffic": "208",
+        "volume": "260"
+      }
+    ],
+    "country": "US",
+    "naturalSearchKeywords": [
+      { "intentBadge": "N", "keyword": "olive young", "volume": "110K" },
+      { "intentBadge": "N", "keyword": "oliveyoung", "volume": "49.5K" },
+      { "intentBadge": "N", "keyword": "olive&young", "volume": "14.8K" },
+      {
+        "intentBadge": "N",
+        "keyword": "olive young global",
+        "volume": "12.1K"
+      },
+      { "intentBadge": "N", "keyword": "olive and young", "volume": "6.6K" }
+    ],
+    "nonBrandRatio": "15.3%",
+    "traffic": "621.8K",
+    "transactionIntent": "28.2%",
+    "url": "oliveyoung.com"
+  },
+  "princesspolly.com": {
+    "brandRatio": "74.7%",
+    "businessIntent": "22.1%",
+    "commercialIntentKeywords": [
+      {
+        "intent": "T",
+        "kd": "43",
+        "keyword": "princess polly discount codes",
+        "traffic": "11.8K",
+        "volume": "14.8K"
+      },
+      {
+        "intent": "C",
+        "kd": "24",
+        "keyword": "summer tops",
+        "traffic": "6.7K",
+        "volume": "27.1K"
+      },
+      {
+        "intent": "C",
+        "kd": "26",
+        "keyword": "graduation dress",
+        "traffic": "5.9K",
+        "volume": "90.5K"
+      },
+      {
+        "intent": "C",
+        "kd": "29",
+        "keyword": "coachella outfits",
+        "traffic": "3K",
+        "volume": "12.1K"
+      },
+      {
+        "intent": "T",
+        "kd": "43",
+        "keyword": "princess polly discount code",
+        "traffic": "2.9K",
+        "volume": "3.6K"
+      },
+      {
+        "intent": "C",
+        "kd": "26",
+        "keyword": "black mini dress",
+        "traffic": "2.7K",
+        "volume": "33.1K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "27",
+        "keyword": "princess polly tracksuit",
+        "traffic": "2.3K",
+        "volume": "2.9K"
+      },
+      {
+        "intent": "C",
+        "kd": "46",
+        "keyword": "womens cowboy boots",
+        "traffic": "2.2K",
+        "volume": "18.1K"
+      },
+      {
+        "intent": "C",
+        "kd": "35",
+        "keyword": "birthday dresses",
+        "traffic": "2.2K",
+        "volume": "27.1K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "44",
+        "keyword": "mini skirt",
+        "traffic": "2.1K",
+        "volume": "60.5K"
+      }
+    ],
+    "country": "US",
+    "naturalSearchKeywords": [
+      { "intentBadge": "N", "keyword": "princess polly", "volume": "1M" },
+      { "intentBadge": "N", "keyword": "princesspolly", "volume": "49.5K" },
+      {
+        "intentBadge": "I",
+        "keyword": "princess polly dresses",
+        "volume": "22.2K"
+      },
+      { "intentBadge": "N", "keyword": "princess poly", "volume": "18.1K" },
+      {
+        "intentBadge": "IN",
+        "keyword": "princess polly returns",
+        "volume": "18.1K"
+      }
+    ],
+    "nonBrandRatio": "25.3%",
+    "traffic": "1.9M",
+    "transactionIntent": "30.6%",
+    "url": "princesspolly.com"
+  },
+  "ryderwear.com": {
+    "brandRatio": "10.4%",
+    "businessIntent": "36.6%",
+    "commercialIntentKeywords": [
+      {
+        "intent": "C",
+        "kd": "29",
+        "keyword": "scrunch butt leggings",
+        "traffic": "2K",
+        "volume": "8.1K"
+      },
+      {
+        "intent": "I&T",
+        "kd": "27",
+        "keyword": "booty shorts",
+        "traffic": "1.7K",
+        "volume": "49.5K"
+      },
+      {
+        "intent": "C",
+        "kd": "55",
+        "keyword": "workout clothes for men",
+        "traffic": "1.3K",
+        "volume": "9.9K"
+      },
+      {
+        "intent": "C",
+        "kd": "29",
+        "keyword": "white leggings",
+        "traffic": "1.1K",
+        "volume": "8.1K"
+      },
+      {
+        "intent": "C",
+        "kd": "35",
+        "keyword": "workout shorts",
+        "traffic": "992",
+        "volume": "12.1K"
+      },
+      {
+        "intent": "C",
+        "kd": "45",
+        "keyword": "lifting shoes",
+        "traffic": "992",
+        "volume": "12.1K"
+      },
+      {
+        "intent": "C",
+        "kd": "55",
+        "keyword": "women leggings",
+        "traffic": "811",
+        "volume": "9.9K"
+      },
+      {
+        "intent": "C",
+        "kd": "28",
+        "keyword": "butt lifting leggings",
+        "traffic": "712",
+        "volume": "5.4K"
+      },
+      {
+        "intent": "C",
+        "kd": "56",
+        "keyword": "women's leggings",
+        "traffic": "664",
+        "volume": "8.1K"
+      },
+      {
+        "intent": "C",
+        "kd": "57",
+        "keyword": "leggings for women",
+        "traffic": "633",
+        "volume": "18.1K"
+      }
+    ],
+    "country": "US",
+    "naturalSearchKeywords": [
+      { "intentBadge": "N", "keyword": "ryderwear", "volume": "5.4K" },
+      {
+        "intentBadge": "C",
+        "keyword": "scrunch butt leggings",
+        "volume": "8.1K"
+      },
+      { "intentBadge": "IT", "keyword": "booty shorts", "volume": "49.5K" },
+      {
+        "intentBadge": "C",
+        "keyword": "workout clothes for men",
+        "volume": "9.9K"
+      },
+      { "intentBadge": "I", "keyword": "nkd", "volume": "4.4K" }
+    ],
+    "nonBrandRatio": "89.6%",
+    "traffic": "211.4K",
+    "transactionIntent": "26.2%",
+    "url": "ryderwear.com"
+  }
+}
