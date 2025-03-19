@@ -4,15 +4,56 @@ let statusElement;
 let fileInput;
 let columnInput;
 let startCrawlButton;
+let extensionToggle;
+let disabledMessage;
 
 document.addEventListener("DOMContentLoaded", function () {
+  // 初始化全局UI元素
+  resultElement = document.getElementById("result");
+  statusElement = document.getElementById("status");
+  fileInput = document.getElementById("excelFile");
+  extensionToggle = document.getElementById("extensionToggle");
+  disabledMessage = document.getElementById("disabledMessage");
+
+  // 验证必要的UI元素
+  if (!resultElement || !statusElement || !fileInput || !extensionToggle || !disabledMessage) {
+    console.error("❌ Required UI elements not found:", {
+      resultElement: !!resultElement,
+      statusElement: !!statusElement,
+      fileInput: !!fileInput,
+      extensionToggle: !!extensionToggle,
+      disabledMessage: !!disabledMessage
+    });
+      return;
+    }
+
+  console.log("✅ All required UI elements found");
+
+  // 从存储中获取插件状态
+  chrome.storage.local.get(["extensionEnabled"], function(result) {
+    console.log("📊 Retrieved extension state from storage:", result);
+    const isEnabled = result.extensionEnabled === true; // 默认为启用状态
+    console.log("🔌 Setting extension state to:", isEnabled);
+    extensionToggle.checked = isEnabled;
+    updateExtensionState(isEnabled);
+  });
+
+  // 添加开关事件监听器
+  extensionToggle.addEventListener("change", function() {
+    const isEnabled = this.checked;
+    console.log("🔄 Extension toggle changed to:", isEnabled);
+    // 保存状态到存储
+    chrome.storage.local.set({ extensionEnabled: isEnabled }, function() {
+      console.log("✅ Extension state saved to storage:", isEnabled);
+      updateExtensionState(isEnabled);
+    });
+  });
+
   // 首先检查当前标签页是否在允许的域名下
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     const currentUrl = tabs[0].url;
-
     // 原有的初始化代码
     initializeExtension();
-
     // 添加消息监听器，用于接收来自background.js和content-script.js的消息
     setupMessageListeners();
   });
@@ -58,6 +99,12 @@ function initializeExtension() {
   // 添加开始爬取按钮的点击事件
   if (startCrawlButton) {
     startCrawlButton.addEventListener("click", function () {
+      // 检查插件是否启用
+      if (!extensionToggle.checked) {
+        showStatus("插件当前已禁用，请启用插件以继续使用", "error");
+        return;
+      }
+
       // 设置状态为processing
       chrome.storage.local.set({ processingStatus: "processing" }, function () {
         console.log("✅ Status set to processing");
@@ -232,8 +279,8 @@ function showReadyToProcess(urlCount) {
 
   if (!resultElement || !statusElement) {
     console.error("❌ Required UI elements not found");
-    return;
-  }
+        return;
+      }
 
   // 清空结果区域，不显示URL列表
   resultElement.innerHTML = "";
@@ -262,10 +309,10 @@ async function startProcessing() {
   // 发送开始处理消息到background script
   chrome.runtime.sendMessage({
     action: "START_BATCH_PROCESSING",
-    data: {
+        data: {
       message: "开始批量处理URLs",
-    },
-  });
+        },
+      });
 
   // 更新界面状态
   showStatus("正在处理中...", "processing");
@@ -352,9 +399,9 @@ function showProcessingStatus(currentIndex, entries) {
           // 下载已处理的数据
           downloadProcessingData(processedUrls);
         });
-    }
-  });
-}
+      }
+    });
+  }
 
 // 显示完成状态
 function showCompletionStatus(processedData) {
@@ -417,13 +464,19 @@ function hideUIElements() {
 
 // 文件上传处理
 async function handleFileUpload(event) {
+  // 检查插件是否启用
+  if (!extensionToggle.checked) {
+    showStatus("插件当前已禁用，请启用插件以继续使用", "error");
+    return;
+  }
+
   console.log("📁 File upload started");
   const file = event.target.files[0];
   if (!file) {
     console.log("❌ No file selected");
-    showStatus("请选择Excel文件", "error");
-    return;
-  }
+      showStatus("请选择Excel文件", "error");
+      return;
+    }
 
   // 检查文件类型
   console.log("📁 File type:", file.type, "File name:", file.name);
@@ -440,10 +493,10 @@ async function handleFileUpload(event) {
     !file.name.endsWith(".csv")
   ) {
     showStatus("请上传有效的Excel文件（.xlsx, .xls）或CSV文件", "error");
-    return;
-  }
+      return;
+    }
 
-  try {
+    try {
     showStatus("正在处理Excel文件...", "processing");
 
     // 清除之前的数据
@@ -460,6 +513,7 @@ async function handleFileUpload(event) {
     const columnNames = {
       url: ["url", "URL", "Url", "网址", "域名"],
       country: ["country", "Country", "COUNTRY", "国家", "地区"],
+      plan: ["plan", "Plan", "PLAN", "套餐", "计划"],
     };
     console.log("🔍 Looking for columns:", columnNames);
 
@@ -467,7 +521,7 @@ async function handleFileUpload(event) {
     const entries = await extractUrlsFromExcel(file, columnNames);
 
     if (entries.length === 0) {
-      showStatus("未找到URL", "warning");
+        showStatus("未找到URL", "warning");
       resultElement.innerHTML = `
           <div class="error-message">
             <p>在指定列中没有找到任何URL。请检查：</p>
@@ -479,11 +533,11 @@ async function handleFileUpload(event) {
               <li>URL单元格是否为空</li>
             </ul>
           </div>`;
-    } else {
+      } else {
       // 显示结果并保存数据
       displayResults(entries);
-    }
-  } catch (error) {
+      }
+    } catch (error) {
     console.error("❌ Error processing file:", error);
     showStatus(error.message, "error");
     resultElement.innerHTML = `
@@ -550,6 +604,7 @@ async function extractUrlsFromExcel(file, columnNames) {
         // 查找目标列
         let urlColumn = null;
         let countryColumn = null;
+        let planColumn = null;
 
         // 获取第一行的所有列名
         if (jsonData.length > 0) {
@@ -571,20 +626,28 @@ async function extractUrlsFromExcel(file, columnNames) {
                 String(header).trim().toLowerCase() === name.toLowerCase()
             )
           );
+
+          // 查找plan列
+          planColumn = headers.find((header) =>
+            columnNames.plan.some(
+              (name) =>
+                String(header).trim().toLowerCase() === name.toLowerCase()
+            )
+          );
         }
 
-        if (!urlColumn || !countryColumn) {
+        if (!urlColumn || !countryColumn || !planColumn) {
           reject(
             new Error(
               `未找到必要的列名。需要URL列（${columnNames.url.join(
                 ", "
-              )}）和country列（${columnNames.country.join(", ")}）`
+              )}）、country列（${columnNames.country.join(", ")}）和plan列（${columnNames.plan.join(", ")}）`
             )
           );
           return;
         }
 
-        console.log("Found columns:", { urlColumn, countryColumn });
+        console.log("Found columns:", { urlColumn, countryColumn, planColumn });
 
         // 用于存储已处理的域名
         const processedDomains = new Map();
@@ -594,8 +657,9 @@ async function extractUrlsFromExcel(file, columnNames) {
         jsonData.forEach((row, index) => {
           const url = row[urlColumn];
           const country = row[countryColumn];
+          const plan = row[planColumn];
 
-          if (!url || !country) return;
+          if (!url || !country || !plan) return;
 
           const urlStr = String(url).trim();
           const mainDomain = extractMainDomain(urlStr);
@@ -607,6 +671,7 @@ async function extractUrlsFromExcel(file, columnNames) {
             domainToUrls.get(mainDomain).push({
               url: urlStr,
               country: String(country).trim(),
+              plan: String(plan).trim(),
             });
           }
         });
@@ -637,6 +702,7 @@ async function extractUrlsFromExcel(file, columnNames) {
             enCountry: getCountryCode(selectedEntry.country) || "",
             url: handleUrl(finalUrl),
             country: selectedEntry.country,
+            plan: selectedEntry.plan,
             status: "unprocessed",
           });
 
@@ -648,6 +714,7 @@ async function extractUrlsFromExcel(file, columnNames) {
           enCountry: entry.enCountry,
           url: entry.url,
           country: entry.country,
+          plan: entry.plan,
           status: entry.status || "unprocessed", // 确保status字段被包含
         }));
 
@@ -686,18 +753,37 @@ async function extractUrlsFromExcel(file, columnNames) {
 
 // 显示结果
 function displayResults(entries) {
-  console.log("📝 Starting to display results for entries:", entries.length);
+  if (!resultElement) return;
 
-  if (!resultElement || !statusElement) {
-    console.error("❌ Required UI elements not found:", {
-      resultElement: !!resultElement,
-      statusElement: !!statusElement,
-    });
-    return;
-  }
+  // 创建表格
+  const table = document.createElement("table");
+  table.className = "results-table";
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>URL</th>
+        <th>Country</th>
+        <th>Plan</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${entries
+      .map(
+          (entry) => `
+        <tr>
+          <td>${entry.url}</td>
+          <td>${entry.country}</td>
+          <td>${entry.plan}</td>
+        </tr>
+      `
+        )
+        .join("")}
+    </tbody>
+  `;
 
-  // 不显示URL列表，直接调用showReadyToProcess
-  showReadyToProcess(entries.length);
+  // 清空之前的内容
+  resultElement.innerHTML = "";
+  resultElement.appendChild(table);
 }
 
 // 显示状态信息
@@ -764,6 +850,13 @@ function addCompletionButtonListeners(processedData) {
             }
           });
         }
+
+        // 下载完成后清空所有缓存
+        chrome.storage.local.clear(function() {
+          console.log("✅ 所有缓存已清空");
+          // 显示重置成功消息
+          showStatus("数据已下载，缓存已清空", "success");
+        });
       }
     );
   });
@@ -849,7 +942,7 @@ function downloadProcessedData(processedData) {
     return {
       官网链接: item.url,
       查询国家: (item.country || "").toUpperCase(),
-      // 联盟源数据国家: item.expectedCountry.toUpperCase(),
+      计划id: item.plan || "",
       品牌流量占比: item.brandRatio,
       非品牌流量占比: item.nonBrandRatio,
       流量: item.traffic,
@@ -878,6 +971,18 @@ function downloadProcessedData(processedData) {
     wb,
     `semrush_data_${new Date().toISOString().slice(0, 10)}.xlsx`
   );
+
+  // 下载JSON数据
+  const jsonData = JSON.stringify(processedDataArray, null, 2);
+  const blob = new Blob([jsonData], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `semrush_data_${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // 下载简化数据
@@ -887,6 +992,7 @@ function downloadSimplifiedData(extractedUrls) {
     return {
       网址: item.url,
       国家: item.country,
+      计划id: item.plan || "",
       状态: item.status,
     };
   });
@@ -903,6 +1009,18 @@ function downloadSimplifiedData(extractedUrls) {
     wb,
     `semrush_urls_${new Date().toISOString().slice(0, 10)}.xlsx`
   );
+
+  // 下载JSON数据
+  const jsonData = JSON.stringify(extractedUrls, null, 2);
+  const blob = new Blob([jsonData], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `semrush_urls_${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // 处理错误
@@ -1011,7 +1129,7 @@ function updateProcessingStatus(data) {
             // 优先使用processingTableData
             if (tableDataCount > 0) {
               downloadProcessedData(processingTableData);
-            } else {
+  } else {
               // 如果没有processingTableData，使用已处理的extractedUrls
               const processedUrls = extractedUrls.filter(
                 (url) => url.status === "processed"
@@ -1207,4 +1325,36 @@ function getMainDomain(domain) {
   }
   // 如果不是以 .com 结尾，直接返回原域名
   return domain;
+}
+
+// 更新插件状态
+function updateExtensionState(isEnabled) {
+  console.log("🔄 Updating extension state:", isEnabled);
+  
+  // 更新禁用消息的显示状态
+  disabledMessage.style.display = isEnabled ? "none" : "block";
+  
+  // 禁用/启用所有交互元素
+  const interactiveElements = [
+    columnInput,
+    startCrawlButton,
+    ...document.querySelectorAll("button")
+  ].filter(Boolean);
+
+  interactiveElements.forEach(element => {
+    element.disabled = !isEnabled;
+    element.style.opacity = isEnabled ? "1" : "0.5";
+  });
+
+  // 如果禁用，清空所有缓存
+  if (!isEnabled) {
+
+      // 重新保存开关状态，因为clear会清除所有数据
+    chrome.storage.local.set({ extensionEnabled: false }, function() {
+      console.log("✅ Extension state re-saved after clearing cache");
+    });
+    if (resultElement) resultElement.innerHTML = "";
+    if (statusElement) statusElement.innerHTML = "";
+    
+  }
 }

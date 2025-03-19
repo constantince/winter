@@ -10,8 +10,17 @@ const processingUrl = params.get("processingUrl");
 const currentPageUrl = window.location.href;
 // 初始化内容脚本
 console.log("SEMRUSH: 🔧 Content script initialized");
+// 检查插件是否启用
+chrome.storage.local.get("extensionEnabled", function (result) {
+  if (!result.extensionEnabled) {
+    console.log("SEMRUSH: 插件已禁用");
+    return;
+  } else {
+    console.log("SEMRUSH: 插件已启用");
+    checkProcessingStatus();
+  }
+});
 
-checkProcessingStatus();
 
 // 主要功能初始化函数
 function initializeScript() {
