@@ -6,6 +6,7 @@ let columnInput;
 let startCrawlButton;
 let extensionToggle;
 let disabledMessage;
+let clearCacheCornerBtn;
 
 document.addEventListener("DOMContentLoaded", function () {
   // 初始化全局UI元素
@@ -15,22 +16,34 @@ document.addEventListener("DOMContentLoaded", function () {
   extensionToggle = document.getElementById("extensionToggle");
   disabledMessage = document.getElementById("disabledMessage");
 
+  // 创建并添加清除缓存按钮到右上角
+  createClearCacheButton();
+
   // 验证必要的UI元素
-  if (!resultElement || !statusElement || !fileInput || !extensionToggle || !disabledMessage) {
+  if (
+    !resultElement ||
+    !statusElement ||
+    !fileInput ||
+    !extensionToggle ||
+    !disabledMessage
+  ) {
     console.error("❌ Required UI elements not found:", {
       resultElement: !!resultElement,
       statusElement: !!statusElement,
       fileInput: !!fileInput,
       extensionToggle: !!extensionToggle,
-      disabledMessage: !!disabledMessage
+      disabledMessage: !!disabledMessage,
     });
-      return;
-    }
+    return;
+  }
+
+  // 检查缓存状态并更新清除按钮
+  updateClearCacheButtonState();
 
   console.log("✅ All required UI elements found");
 
   // 从存储中获取插件状态
-  chrome.storage.local.get(["extensionEnabled"], function(result) {
+  chrome.storage.local.get(["extensionEnabled"], function (result) {
     console.log("📊 Retrieved extension state from storage:", result);
     const isEnabled = result.extensionEnabled === true; // 默认为启用状态
     console.log("🔌 Setting extension state to:", isEnabled);
@@ -39,11 +52,11 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   // 添加开关事件监听器
-  extensionToggle.addEventListener("change", function() {
+  extensionToggle.addEventListener("change", function () {
     const isEnabled = this.checked;
     console.log("🔄 Extension toggle changed to:", isEnabled);
     // 保存状态到存储
-    chrome.storage.local.set({ extensionEnabled: isEnabled }, function() {
+    chrome.storage.local.set({ extensionEnabled: isEnabled }, function () {
       console.log("✅ Extension state saved to storage:", isEnabled);
       updateExtensionState(isEnabled);
     });
@@ -279,8 +292,8 @@ function showReadyToProcess(urlCount) {
 
   if (!resultElement || !statusElement) {
     console.error("❌ Required UI elements not found");
-        return;
-      }
+    return;
+  }
 
   // 清空结果区域，不显示URL列表
   resultElement.innerHTML = "";
@@ -309,10 +322,10 @@ async function startProcessing() {
   // 发送开始处理消息到background script
   chrome.runtime.sendMessage({
     action: "START_BATCH_PROCESSING",
-        data: {
+    data: {
       message: "开始批量处理URLs",
-        },
-      });
+    },
+  });
 
   // 更新界面状态
   showStatus("正在处理中...", "processing");
@@ -399,9 +412,9 @@ function showProcessingStatus(currentIndex, entries) {
           // 下载已处理的数据
           downloadProcessingData(processedUrls);
         });
-      }
-    });
-  }
+    }
+  });
+}
 
 // 显示完成状态
 function showCompletionStatus(processedData) {
@@ -436,6 +449,10 @@ function showCompletionStatus(processedData) {
           <button id="downloadBtn" class="button-primary">
             <span class="icon">📥</span>
             <span>下载数据</span>
+          </button>
+          <button id="clearCacheBtn" class="button-warning">
+            <span class="icon">🗑️</span>
+            <span>清除缓存</span>
           </button>
           <button id="resetBtn" class="button-secondary">
             <span class="icon">🔄</span>
@@ -474,9 +491,9 @@ async function handleFileUpload(event) {
   const file = event.target.files[0];
   if (!file) {
     console.log("❌ No file selected");
-      showStatus("请选择Excel文件", "error");
-      return;
-    }
+    showStatus("请选择Excel文件", "error");
+    return;
+  }
 
   // 检查文件类型
   console.log("📁 File type:", file.type, "File name:", file.name);
@@ -493,10 +510,10 @@ async function handleFileUpload(event) {
     !file.name.endsWith(".csv")
   ) {
     showStatus("请上传有效的Excel文件（.xlsx, .xls）或CSV文件", "error");
-      return;
-    }
+    return;
+  }
 
-    try {
+  try {
     showStatus("正在处理Excel文件...", "processing");
 
     // 清除之前的数据
@@ -509,11 +526,14 @@ async function handleFileUpload(event) {
       "status",
     ]);
 
+    updateClearCacheButtonState();
+
     // 自定义列名
     const columnNames = {
       url: ["url", "URL", "Url", "网址", "域名"],
       country: ["country", "Country", "COUNTRY", "国家", "地区"],
       plan: ["plan", "Plan", "PLAN", "套餐", "计划"],
+      tag: ["tag", "Tag", "TAG", "标签", "tags", "Tags", "TAGS"],
     };
     console.log("🔍 Looking for columns:", columnNames);
 
@@ -521,7 +541,7 @@ async function handleFileUpload(event) {
     const entries = await extractUrlsFromExcel(file, columnNames);
 
     if (entries.length === 0) {
-        showStatus("未找到URL", "warning");
+      showStatus("未找到URL", "warning");
       resultElement.innerHTML = `
           <div class="error-message">
             <p>在指定列中没有找到任何URL。请检查：</p>
@@ -533,11 +553,11 @@ async function handleFileUpload(event) {
               <li>URL单元格是否为空</li>
             </ul>
           </div>`;
-      } else {
+    } else {
       // 显示结果并保存数据
       displayResults(entries);
-      }
-    } catch (error) {
+    }
+  } catch (error) {
     console.error("❌ Error processing file:", error);
     showStatus(error.message, "error");
     resultElement.innerHTML = `
@@ -605,6 +625,7 @@ async function extractUrlsFromExcel(file, columnNames) {
         let urlColumn = null;
         let countryColumn = null;
         let planColumn = null;
+        let tagColumn = null;
 
         // 获取第一行的所有列名
         if (jsonData.length > 0) {
@@ -634,6 +655,14 @@ async function extractUrlsFromExcel(file, columnNames) {
                 String(header).trim().toLowerCase() === name.toLowerCase()
             )
           );
+
+          // 查找tag列
+          tagColumn = headers.find((header) =>
+            columnNames.tag.some(
+              (name) =>
+                String(header).trim().toLowerCase() === name.toLowerCase()
+            )
+          );
         }
 
         if (!urlColumn || !countryColumn || !planColumn) {
@@ -641,13 +670,20 @@ async function extractUrlsFromExcel(file, columnNames) {
             new Error(
               `未找到必要的列名。需要URL列（${columnNames.url.join(
                 ", "
-              )}）、country列（${columnNames.country.join(", ")}）和plan列（${columnNames.plan.join(", ")}）`
+              )}）、country列（${columnNames.country.join(
+                ", "
+              )}）和plan列（${columnNames.plan.join(", ")}）`
             )
           );
           return;
         }
 
-        console.log("Found columns:", { urlColumn, countryColumn, planColumn });
+        console.log("Found columns:", {
+          urlColumn,
+          countryColumn,
+          planColumn,
+          tagColumn,
+        });
 
         // 用于存储已处理的域名
         const processedDomains = new Map();
@@ -658,6 +694,7 @@ async function extractUrlsFromExcel(file, columnNames) {
           const url = row[urlColumn];
           const country = row[countryColumn];
           const plan = row[planColumn];
+          const tag = tagColumn ? row[tagColumn] : "";
 
           if (!url || !country || !plan) return;
 
@@ -672,6 +709,7 @@ async function extractUrlsFromExcel(file, columnNames) {
               url: urlStr,
               country: String(country).trim(),
               plan: String(plan).trim(),
+              tag: tag ? String(tag).trim() : "",
             });
           }
         });
@@ -703,6 +741,7 @@ async function extractUrlsFromExcel(file, columnNames) {
             url: handleUrl(finalUrl),
             country: selectedEntry.country,
             plan: selectedEntry.plan,
+            tag: selectedEntry.tag || "",
             status: "unprocessed",
           });
 
@@ -715,6 +754,7 @@ async function extractUrlsFromExcel(file, columnNames) {
           url: entry.url,
           country: entry.country,
           plan: entry.plan,
+          tag: entry.tag,
           status: entry.status || "unprocessed", // 确保status字段被包含
         }));
 
@@ -768,7 +808,7 @@ function displayResults(entries) {
     </thead>
     <tbody>
       ${entries
-      .map(
+        .map(
           (entry) => `
         <tr>
           <td>${entry.url}</td>
@@ -852,7 +892,7 @@ function addCompletionButtonListeners(processedData) {
         }
 
         // 下载完成后清空所有缓存
-        chrome.storage.local.clear(function() {
+        chrome.storage.local.clear(function () {
           console.log("✅ 所有缓存已清空");
           // 显示重置成功消息
           showStatus("数据已下载，缓存已清空", "success");
@@ -860,6 +900,13 @@ function addCompletionButtonListeners(processedData) {
       }
     );
   });
+
+  // 修改清除缓存按钮点击事件
+  document
+    .getElementById("clearCacheBtn")
+    .addEventListener("click", async function () {
+      await handleClearCache(); // 使用统一的清除缓存处理函数
+    });
 
   // 添加重新开始按钮点击事件
   document
@@ -943,6 +990,7 @@ function downloadProcessedData(processedData) {
       官网链接: item.url,
       查询国家: (item.country || "").toUpperCase(),
       计划id: item.plan || "",
+      标签: item.tag || "",
       品牌流量占比: item.brandRatio,
       非品牌流量占比: item.nonBrandRatio,
       流量: item.traffic,
@@ -1129,7 +1177,7 @@ function updateProcessingStatus(data) {
             // 优先使用processingTableData
             if (tableDataCount > 0) {
               downloadProcessedData(processingTableData);
-  } else {
+            } else {
               // 如果没有processingTableData，使用已处理的extractedUrls
               const processedUrls = extractedUrls.filter(
                 (url) => url.status === "processed"
@@ -1296,6 +1344,27 @@ style.textContent = `
     margin: 0 auto;
     display: block;
   }
+  .button-warning {
+    background-color: #ff9800;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .button-warning:hover {
+    opacity: 0.9;
+  }
+  .button-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 15px;
+    flex-wrap: wrap;
+  }
 `;
 document.head.appendChild(style);
 
@@ -1330,31 +1399,115 @@ function getMainDomain(domain) {
 // 更新插件状态
 function updateExtensionState(isEnabled) {
   console.log("🔄 Updating extension state:", isEnabled);
-  
+
   // 更新禁用消息的显示状态
   disabledMessage.style.display = isEnabled ? "none" : "block";
-  
+
   // 禁用/启用所有交互元素
   const interactiveElements = [
     columnInput,
     startCrawlButton,
-    ...document.querySelectorAll("button")
+    ...document.querySelectorAll("button"),
   ].filter(Boolean);
 
-  interactiveElements.forEach(element => {
+  interactiveElements.forEach((element) => {
     element.disabled = !isEnabled;
     element.style.opacity = isEnabled ? "1" : "0.5";
   });
 
   // 如果禁用，清空所有缓存
   if (!isEnabled) {
-
-      // 重新保存开关状态，因为clear会清除所有数据
-    chrome.storage.local.set({ extensionEnabled: false }, function() {
+    // 重新保存开关状态，因为clear会清除所有数据
+    chrome.storage.local.set({ extensionEnabled: false }, function () {
       console.log("✅ Extension state re-saved after clearing cache");
     });
     if (resultElement) resultElement.innerHTML = "";
     if (statusElement) statusElement.innerHTML = "";
-    
   }
+}
+
+// 创建清除缓存按钮
+function createClearCacheButton() {
+  // 创建按钮容器
+  const buttonContainer = document.createElement("div");
+  buttonContainer.className = "clear-cache-container";
+
+  // 创建按钮
+  clearCacheCornerBtn = document.createElement("button");
+  clearCacheCornerBtn.id = "clearCacheCornerBtn";
+  clearCacheCornerBtn.className = "clear-cache-corner-btn disabled";
+  clearCacheCornerBtn.innerHTML = `
+    <span class="icon">🗑️</span>
+    <span>清除缓存</span>
+  `;
+
+  // 添加点击事件
+  clearCacheCornerBtn.addEventListener("click", handleClearCache);
+
+  // 将按钮添加到容器
+  buttonContainer.appendChild(clearCacheCornerBtn);
+
+  // 将容器添加到body的最前面
+  document.body.insertBefore(buttonContainer, document.body.firstChild);
+
+  // 添加样式
+  const style = document.createElement("style");
+  style.textContent = `
+    .clear-cache-container {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+    }
+    
+    .clear-cache-corner-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: none;
+      background-color: #ff9800;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .clear-cache-corner-btn:hover:not(.disabled) {
+      opacity: 0.9;
+    }
+    
+    .clear-cache-corner-btn.disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+// 处理清除缓存
+async function handleClearCache() {
+  if (clearCacheCornerBtn.classList.contains("disabled")) {
+    return;
+  }
+
+  // 清除所有存储的数据
+  await chrome.storage.local.clear();
+  showStatus("缓存已清除", "success");
+
+  // 禁用按钮
+  clearCacheCornerBtn.classList.add("disabled");
+}
+
+// 更新清除缓存按钮状态
+function updateClearCacheButtonState() {
+  chrome.storage.local.get(null, function (items) {
+    const hasData = Object.keys(items).length > 1; // 大于1是因为extensionEnabled总是存在
+    if (hasData) {
+      clearCacheCornerBtn.classList.remove("disabled");
+    } else {
+      clearCacheCornerBtn.classList.add("disabled");
+    }
+  });
 }

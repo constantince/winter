@@ -3,44 +3,42 @@
   "description": "Extract data from Semrush",
   "version": "1.0",
   "manifest_version": 3,
-  "icons":
-  {
+  "icons": {
     "16": "icon.png",
     "48": "icon.png",
     "128": "icon.png"
   },
-    
+
   "action": {
-          "default_icon": {
-           "16": "icon.png",
-              "24": "icon.png",
-              "32": "icon.png"
-            },
-            "default_title": "Start!",
-        "default_popup": "popup.html"
+    "default_icon": {
+      "16": "icon.png",
+      "24": "icon.png",
+      "32": "icon.png"
+    },
+    "default_title": "Start!",
+    "default_popup": "popup.html"
   },
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
-  "permissions": [
-    "storage",
-    "unlimitedStorage",
-    "tabs",
-    "activeTab"
-  ],
-    "content_security_policy": {
-        "extension_pages": "script-src 'self'; object-src 'self'"
-    },
+  "permissions": ["storage", "unlimitedStorage", "tabs", "activeTab"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["xlsx.js", "projects.js", "overview.js",  "intent.js",  "countryMapping.js", "entry.js"],
+      "js": [
+        "xlsx.js",
+        "projects.js",
+        "overview.js",
+        "intent.js",
+        "countryMapping.js",
+        "entry.js"
+      ],
       "run_at": "document_start"
     }
   ],
-  "host_permissions": [
-    "https://www.semrush.fun/*",
-    "https://*.semrush.fun/*"
-  ]
+  "host_permissions": ["https://www.semrush.fun/*", "https://*.semrush.fun/*"]
 }
